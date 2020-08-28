@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="基于堆分配器的元数据的利用技术由于通用性和强大性被广泛研究。但这一类技术总是被看作艺术，因为只能针对特定的分配器去人工探索新技术。而本文提出了一种自动探索堆利用原语的方法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="论文阅读：Automatic Techniques to Systematically Discover New Heap Exploitation Primitives">
+<meta property="og:url" content="http://yoursite.com/2020/07/17/archeap/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="基于堆分配器的元数据的利用技术由于通用性和强大性被广泛研究。但这一类技术总是被看作艺术，因为只能针对特定的分配器去人工探索新技术。而本文提出了一种自动探索堆利用原语的方法。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig1.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig2.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig3.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig4.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig5.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig6.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig7.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig8.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig9.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig10.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig11.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig12.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig13.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig14.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig15.png">
+<meta property="og:image" content="http://yoursite.com/images/archeap/fig16.png">
+<meta property="article:published_time" content="2020-07-17T14:36:03.000Z">
+<meta property="article:modified_time" content="2020-07-18T02:21:56.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="HEAP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/images/archeap/fig1.png">
+
+
+<link rel="canonical" href="http://yoursite.com/2020/07/17/archeap/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>论文阅读：Automatic Techniques to Systematically Discover New Heap Exploitation Primitives | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E4%BD%9C%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">工作介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A0%86%E5%88%86%E9%85%8D%E5%99%A8%E5%88%86%E6%9E%90"><span class="nav-number">2.</span> <span class="nav-text">堆分配器分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E9%85%8D%E5%99%A8%E7%9A%84%E9%80%9A%E7%94%A8%E8%AE%BE%E8%AE%A1"><span class="nav-number">2.1.</span> <span class="nav-text">分配器的通用设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ptmalloc2%E5%A0%86%E5%88%86%E9%85%8D%E7%A0%94%E7%A9%B6"><span class="nav-number">2.2.</span> <span class="nav-text">ptmalloc2堆分配研究</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E6%9D%82%E7%9A%84%E7%8E%B0%E4%BB%A3%E5%A0%86%E5%88%A9%E7%94%A8%E6%8A%80%E6%9C%AF"><span class="nav-number">2.3.</span> <span class="nav-text">复杂的现代堆利用技术</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A0%86%E6%8A%BD%E8%B1%A1%E6%A8%A1%E5%9E%8B"><span class="nav-number">3.</span> <span class="nav-text">堆抽象模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8A%BD%E8%B1%A1%E5%A0%86%E5%88%A9%E7%94%A8%E6%8A%80%E6%9C%AF"><span class="nav-number">3.1.</span> <span class="nav-text">抽象堆利用技术</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A8%81%E8%83%81%E6%A8%A1%E5%9E%8B"><span class="nav-number">3.2.</span> <span class="nav-text">威胁模型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%80%E6%9C%AF%E6%8C%91%E6%88%98"><span class="nav-number">4.</span> <span class="nav-text">技术挑战</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E9%9A%BE%E7%82%B9%E4%B8%8E%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">4.1.</span> <span class="nav-text">主要难点与解决方案</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E5%8A%A8%E5%8C%96%E6%8E%A2%E7%B4%A2%E5%A0%86%E5%88%A9%E7%94%A8%E6%8A%80%E6%9C%AF-ARCHEAP"><span class="nav-number">5.</span> <span class="nav-text">自动化探索堆利用技术-ARCHEAP</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ARCHEAP%E7%B3%BB%E7%BB%9F%E6%A6%82%E8%BF%B0"><span class="nav-number">5.1.</span> <span class="nav-text">ARCHEAP系统概述</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E6%8A%BD%E8%B1%A1%E5%A0%86%E7%94%9F%E6%88%90action"><span class="nav-number">5.2.</span> <span class="nav-text">基于抽象堆生成action</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Allocation"><span class="nav-number">5.2.1.</span> <span class="nav-text">Allocation</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#deallocation"><span class="nav-number">5.2.2.</span> <span class="nav-text">deallocation</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#heap-amp-buffer-writes"><span class="nav-number">5.2.3.</span> <span class="nav-text">heap &amp; buffer writes</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#bug-invocation"><span class="nav-number">5.2.4.</span> <span class="nav-text">bug invocation</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Model-specifications"><span class="nav-number">5.2.5.</span> <span class="nav-text">Model specifications</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Detecting-Techniques-by-Impact"><span class="nav-number">5.3.</span> <span class="nav-text">Detecting Techniques by Impact</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E5%AE%9E%E4%BE%8B"><span class="nav-number">5.4.</span> <span class="nav-text">运行实例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Generating-PoC-via-Delta-Debugging"><span class="nav-number">5.5.</span> <span class="nav-text">Generating PoC via Delta-Debugging</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Implementation"><span class="nav-number">6.</span> <span class="nav-text">Implementation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Applications"><span class="nav-number">7.</span> <span class="nav-text">Applications</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%91%E7%8E%B0%E7%9A%84%E6%96%B0%E7%9A%84%E5%A0%86%E5%88%A9%E7%94%A8%E6%8A%80%E6%9C%AF"><span class="nav-number">7.1.</span> <span class="nav-text">发现的新的堆利用技术</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8D%E5%90%8C%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%A0%86%E5%88%86%E9%85%8D%E5%99%A8"><span class="nav-number">7.2.</span> <span class="nav-text">不同类型的堆分配器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Evolution-of-Security-Features"><span class="nav-number">7.3.</span> <span class="nav-text">Evolution of Security Features</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Evaluation"><span class="nav-number">8.</span> <span class="nav-text">Evaluation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%8Eheaphopper%E6%AF%94%E8%BE%83"><span class="nav-number">8.1.</span> <span class="nav-text">与heaphopper比较</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#New-techniques"><span class="nav-number">8.1.1.</span> <span class="nav-text">New techniques</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Known-techniques-with-specified-models"><span class="nav-number">8.1.2.</span> <span class="nav-text">Known techniques with specified models</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Security-Check-Coverage"><span class="nav-number">8.2.</span> <span class="nav-text">Security Check Coverage</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Delta-Debugging-Based-Minimization"><span class="nav-number">8.3.</span> <span class="nav-text">Delta-Debugging-Based Minimization</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Discussion-and-Limitations"><span class="nav-number">9.</span> <span class="nav-text">Discussion and Limitations</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Overfitting-to-fuzzing-strategies"><span class="nav-number">9.1.</span> <span class="nav-text">Overfitting to fuzzing strategies</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#scope"><span class="nav-number">9.2.</span> <span class="nav-text">scope</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/17/archeap/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          论文阅读：Automatic Techniques to Systematically Discover New Heap Exploitation Primitives
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-07-17 22:36:03" itemprop="dateCreated datePublished" datetime="2020-07-17T22:36:03+08:00">2020-07-17</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-07-18 10:21:56" itemprop="dateModified" datetime="2020-07-18T10:21:56+08:00">2020-07-18</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E8%AE%BA%E6%96%87%E9%98%85%E8%AF%BB%E4%B8%8E%E6%96%87%E7%AB%A0%E7%BF%BB%E8%AF%91/" itemprop="url" rel="index"><span itemprop="name">论文阅读与文章翻译</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>8.9k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>8 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>基于堆分配器的元数据的利用技术由于通用性和强大性被广泛研究。但这一类技术总是被看作艺术，因为只能针对特定的分配器去人工探索新技术。而本文提出了一种自动探索堆利用原语的方法。</p>
+<a id="more"></a>
+
+<h2 id="工作介绍"><a href="#工作介绍" class="headerlink" title="工作介绍"></a>工作介绍</h2><p><strong>Main Idea</strong>：本文提出了一个可以自动化地系统性挖掘堆利用原语的工具<code>ARCHEAP</code>.其主要思想是通过分析确定一组现代堆分配器的通用设计和漏洞的根本原因作为模型，并通过提供堆操作和攻击功能作为操作，让工具去自主地探索空间，与fuzz中的空间概念相似。</p>
+<p>堆利用技术受偏爱的原因</p>
+<ul>
+<li>与应用独立<ul>
+<li>不需要对应用内部进行很深入的了解(相比其他利用技术，比如ROP等)</li>
+</ul>
+</li>
+<li>功能强大<ul>
+<li>可以绕过很多的现代强力保护措施</li>
+</ul>
+</li>
+</ul>
+<p><strong>堆利用技术发展历程</strong></p>
+<p><img src="/images/archeap/fig1.png" alt="堆利用技术"></p>
+<p>上图是堆利用技术在社区中的研究发展。但由于堆利用技术的这种所谓的艺术性，导致社区很难理解各种堆分配器（及跨不同版本）的安全隐患。而且当前的研究也具有很强的偏向性，比如ptmalloc2是被研究的最彻底的一个堆分配器，其他的则不然。</p>
+<p><strong>工作的三个难点</strong>(类比fuzz):</p>
+<ul>
+<li>生成具有准确数据的特定步骤序列</li>
+<li>设计一种快速的方法来评估堆利用的可能性<ul>
+<li>fuzz通过segment fault来识别有趣的测试用例。</li>
+</ul>
+</li>
+<li>如何精简结果以便更好的理解生成的测试用例<ul>
+<li>模糊测试器生成的测试用例通常是多余且晦涩的，因此要求用户花费不可忽略的时间和精力来分析最终结果</li>
+</ul>
+</li>
+</ul>
+<p>作者认为解决上述问题的关键点在于：<strong>抽象出堆分配器的内部共通点(通用设计模块)以及堆利用的root causes</strong>.</p>
+<p><strong>现代堆分配器的通用模块</strong>：<code>binning, in-place metadata, and cardinal data</code></p>
+<p>使用上述通用模块构建模型。后续工作基于此模型</p>
+<ul>
+<li>将堆操作(如malloc)与攻击功能操作(比如UAF)进行变异与合成。</li>
+<li>使用基于shadow-memory的检测来进行有效性评估</li>
+<li>当ARCHEAP找到新的利用原语时，它就会生成有效的PoC代码<ul>
+<li>使用delta调试(已发表工作)，将冗余测试用例减少到最小的等效</li>
+</ul>
+</li>
+</ul>
+<p><strong>主要贡献</strong>：</p>
+<ul>
+<li>证明堆分配器具有共同的设计，并且设计了一种有效的方法来评估利用技术。</li>
+<li>设计实现了 针对各种分配器自动发现堆利用技术的工具ARCHEAP，并对其原型进行了评估。</li>
+<li>新利用技术发现<ul>
+<li>在ptmalloc2中发现了五项新技术</li>
+<li>在<code>tcmalloc</code>，<code>jemalloc</code>和<code>DieHarder</code>等各种分配器中发现了几项技术</li>
+</ul>
+</li>
+<li>开源：<a target="_blank" rel="noopener" href="https://github.com/sslab-gatech/ArcHeap">https://github.com/sslab-gatech/ArcHeap</a><ul>
+<li>但并未公开代码，只公开了五个发现的新堆利用技术</li>
+</ul>
+</li>
+</ul>
+<h2 id="堆分配器分析"><a href="#堆分配器分析" class="headerlink" title="堆分配器分析"></a>堆分配器分析</h2><p>所有的堆分配器都普遍在意两个目标</p>
+<ul>
+<li>高性能</li>
+<li>低内存消耗(指管理堆需要的内存)</li>
+</ul>
+<h3 id="分配器的通用设计"><a href="#分配器的通用设计" class="headerlink" title="分配器的通用设计"></a>分配器的通用设计</h3><ul>
+<li><p><strong>binning</strong>：内存块按大小分组管理</p>
+<ul>
+<li>小内存块关注性能，大内存块关注内存使用情况</li>
+</ul>
+</li>
+<li><p><strong>in-place metadata</strong>：大多数堆管理的元数据都在payload附近(即靠近用户能使用的内存区域)</p>
+<ul>
+<li>因为这样做可以利用cache提高性能</li>
+</ul>
+</li>
+<li><p><strong>cardinal data</strong>：元数据一般并未做编码，以便快速查询和内存使用</p>
+</li>
+</ul>
+<p>由此导致的工作需要注意的地方</p>
+<ul>
+<li><p>考虑到binning的话，需要一个更好的采样方法以探索分配器的多个大小组</p>
+<ul>
+<li>如果直接在2^64^空间中统一选择一个大小，则在ptmalloc2中选择最小大小组的可能性（&lt;2^7^）几乎为零（2^-57^）</li>
+</ul>
+</li>
+<li><p><strong>in-place</strong> 和<strong>cardinal data</strong>限制了元数据的位置和域，从而减少了搜索空间</p>
+<ul>
+<li>根据这些设计原则，就只需要关注具有特定形式（即指针或大小）的块边界中的元数据。</li>
+</ul>
+</li>
+</ul>
+<h3 id="ptmalloc2堆分配研究"><a href="#ptmalloc2堆分配研究" class="headerlink" title="ptmalloc2堆分配研究"></a>ptmalloc2堆分配研究</h3><p>论文以ptmalloc2作为讨论的默认版本。</p>
+<p>**metadata(元数据)**：ptmalloc2中的chunk结构如下</p>
+<p><img src="/images/archeap/fig2.png" alt="chunk"></p>
+<p><strong>Binning</strong>:ptmalloc2使用bin来堆不同大小的chunk分类管理</p>
+<ul>
+<li>fastbin、small bin、large bin等。fastbin是一个单链表数组，每个单链表上的chunk大小相同。</li>
+<li>smallbin和largebin中每个bin都是一个双向链表。其中small bin每条链上大小相同，large bin上每一条则按照从大到小存放一定范围的chunk</li>
+<li>unsorted bin存放回收的chunk的双链表</li>
+</ul>
+<h3 id="复杂的现代堆利用技术"><a href="#复杂的现代堆利用技术" class="headerlink" title="复杂的现代堆利用技术"></a>复杂的现代堆利用技术</h3><p>攻击者一旦发现了破坏堆元数据（例如overflow）或不正确使用堆API（例如double free）的漏洞，则下一步是将漏洞开发为更有用的利用原语，例如实现任意写入。</p>
+<p>起初有一些针对大多数分配器的通用技术，比如<code>unsafe unlink</code>这种技术，但由于堆分配器的安全检查增加，这些技术往往会快速的失效。下图是研究人员研究并共享出来的一些堆利用技术，其中后面五项为论文工作发现的堆利用技术：</p>
+<p><img src="/images/archeap/fig3.png" alt="堆利用技术"></p>
+<h2 id="堆抽象模型"><a href="#堆抽象模型" class="headerlink" title="堆抽象模型"></a>堆抽象模型</h2><p>堆抽象模型使得能够描述独立于基础分配器的堆利用技术。作者专注于对抗模型，为简洁省略了明显的堆API（即malloc和free）。</p>
+<h3 id="抽象堆利用技术"><a href="#抽象堆利用技术" class="headerlink" title="抽象堆利用技术"></a>抽象堆利用技术</h3><p>论文从两个方面抽象一个堆利用技术</p>
+<ul>
+<li>Bug的类型：被用来将程序引入未预料状态。<ul>
+<li>overflow(OF)<ul>
+<li>越界写</li>
+<li>可以用来修改后续chunk的元数据</li>
+<li>由于溢出可以导致很多的利用方式，又根据开发者常见错误细分：<ul>
+<li>Off-by-one (O1)：常见于开发错误：循环边界控制</li>
+<li>Off-by-one NULL (O1N)，常见于开发错误：字符串拷贝</li>
+</ul>
+</li>
+<li><strong>注意一点</strong>：任意读写并没有被纳入其中，因为这两者一般要求过于特定，以及依赖特定的应用程序，不适合通用化。</li>
+</ul>
+</li>
+<li>write-after-free(WF)<ul>
+<li>写入一个被free的对象</li>
+<li>可以用来修改free的元数据</li>
+</ul>
+</li>
+<li>Arbitraty- free(AF)<ul>
+<li>free一个任意指针</li>
+<li>会破坏堆管理操作完整性(如，free一个构造出来的元数据堆块)</li>
+</ul>
+</li>
+<li>Double free<ul>
+<li>释放一个已经回收了的对象</li>
+<li>会破坏堆管理操作完整性（如，堆管理结构中链接多个相同的回收指针）；</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>利用技术的影响</strong>。根据最终的结果分为以下四类：<ul>
+<li>Arbitrary-chunk (AC)<ul>
+<li>劫持下一次malloc分配以返回想要的任意指针。</li>
+</ul>
+</li>
+<li>Overlapping-chunk (OC)<ul>
+<li>劫持下一个malloc以返回攻击者可控制（例如可重写）的chunk内部的chunk。</li>
+</ul>
+</li>
+<li>Arbitrary-write (AW)<ul>
+<li>将堆漏洞发展成一个任意地址写</li>
+</ul>
+</li>
+<li>Restricted-write (RW)<ul>
+<li>与AW相似，不过会有部分限制。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="威胁模型"><a href="#威胁模型" class="headerlink" title="威胁模型"></a>威胁模型</h3><p>攻击者可以发起的合法动作包括：</p>
+<ul>
+<li>可以分配任意大小的对象，并以任意顺序释放对象<ul>
+<li>意味着攻击者可以使用任意大小作为惨呼调用任意数量的malloc调用，并以任意顺序调用free</li>
+</ul>
+</li>
+<li>可以在合法的内存区域（即图1中的有效负载或全局内存）上写入任意数据<ul>
+<li>尽管这种合法行为在很大程度上是理论上的应用，但是可以检查出所有可能的滥用机会</li>
+</ul>
+</li>
+<li>攻击者只能触发一种类型的bug。<ul>
+<li>在实践中允许多次触发同一类型的bug。</li>
+</ul>
+</li>
+</ul>
+<p><strong>如果堆利用技术所需的功能少于此处描述的功能则更好(在这种情况下会做一个旁注以更好地加以说明)</strong></p>
+<h2 id="技术挑战"><a href="#技术挑战" class="headerlink" title="技术挑战"></a>技术挑战</h2><p>论文工作的目标是实现在任何堆分配器的情况下自动探索新类型的堆利用技术-不需要像AFL一样要求源代码</p>
+<ul>
+<li>系统地发现未知类型的堆利用方案技术</li>
+<li>综合评估流行堆分配器的安全性</li>
+</ul>
+<h3 id="主要难点与解决方案"><a href="#主要难点与解决方案" class="headerlink" title="主要难点与解决方案"></a>主要难点与解决方案</h3><ul>
+<li>堆空间自主推理(?)–Autonomous reasoning of the heap space<ul>
+<li>搜索空间太大问题，原因在于<ul>
+<li>大量的可能顺序</li>
+<li>堆API的参数</li>
+<li>堆和全局缓冲区中的数据组成</li>
+</ul>
+</li>
+<li>本文工作方法<ul>
+<li>使用了一种随机搜索算法，该算法可有效地探索较大的搜索空间</li>
+<li>抽象出了现代堆分配器的通用设计，以进一步减少搜索空间</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>设计开发技术–Devising exploitation techniques<ul>
+<li>系统需要验证候选者是否有价值。 <ul>
+<li>评估探索过程中<strong>利用的影响</strong>（即上文所述AC，OC，AW和RW），而不是合成一个完整的exp。</li>
+<li>通过使用shadow-memory，可以在运行时快速检测出上述影响。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Normalization<ul>
+<li>随机搜索能有效地探索大的搜索空间，但这种算法发现的利用技术往往是冗余并且无关紧要的，需要时间来分析结果</li>
+<li>利用增量调试技术(delta-debugging)[76]来最小化多余的动作，并将发现的结果转换为基本类</li>
+</ul>
+</li>
+</ul>
+<h2 id="自动化探索堆利用技术-ARCHEAP"><a href="#自动化探索堆利用技术-ARCHEAP" class="headerlink" title="自动化探索堆利用技术-ARCHEAP"></a>自动化探索堆利用技术-ARCHEAP</h2><h3 id="ARCHEAP系统概述"><a href="#ARCHEAP系统概述" class="headerlink" title="ARCHEAP系统概述"></a>ARCHEAP系统概述</h3><p>系统结构如下：</p>
+<p><img src="/images/archeap/fig4.png" alt="堆利用技术"></p>
+<p>ARCHEAP遵循模糊测试的常规模式：测试生成，崩溃检测和减量测试，但针对堆利用进行了量身定制。</p>
+<ul>
+<li>根据用户提供的模型规范生成一个堆动作序列<ul>
+<li>规范是可选项，默认下ARCHEAP将生成每一个可能的动作。</li>
+<li>ARCHEAP可以制定的堆动作包括堆分配、释放、缓冲区写入、堆写入和bug调用</li>
+</ul>
+</li>
+<li>执行过程中，ARCHEAP会评估所执行的测试用例带来的<code>利用影响</code>，<ul>
+<li>类似于模糊测试中的检测崩溃</li>
+</ul>
+</li>
+<li>当ARCHEAP发现一个新的漏洞时会将堆动作最小化，并产生PoC代码，其中只包含一组必要的动作。<ul>
+<li>这种最小化是为了帮助对发现的技术进行<code>post-analysis</code>，与false positive无关；并且由于ARCHEAP在运行时的直接进行了分析，所以在评估中没有产生false positive。</li>
+</ul>
+</li>
+</ul>
+<h3 id="基于抽象堆生成action"><a href="#基于抽象堆生成action" class="headerlink" title="基于抽象堆生成action"></a>基于抽象堆生成action</h3><p>ARCHEAP随机生成五种类型的堆相关动作：<code>Allocation</code>、<code>deallocation</code>、<code>buffer writes</code>、<code>heap writes</code>和<code>bug invocation</code>。为了减少搜索空间，ARCHEAP使用现代分配器的常见设计习惯在抽象堆模型之上制定每个动作。</p>
+<p><img src="/images/archeap/fig5.png" alt="堆利用技术"></p>
+<h4 id="Allocation"><a href="#Allocation" class="headerlink" title="Allocation"></a><strong>Allocation</strong></h4><p>通过标准化的API，malloc()分配内存；对象的地址存储到其内部数据结构(container)；还存放了对象的块大小以及状态</p>
+<ul>
+<li>简单的方式是以随机大小分配内存，但针对分配器需要更多的考虑。采用的是随机选择一组大小，然后分配一个大小在此组中的对象(图中I1)<ul>
+<li>当前的分组为[2^0^,2^5^)、[2^5^,2^10^)、[2^10^,2^15^)、[2^15^,2^20^)四组，这样可以使得对于fastbin大小范围内的测试选择机会更大一些。</li>
+</ul>
+</li>
+<li>考虑到对象与同一容器中的其他对象进行交互,需要在同一bin中分配多个内存对象。(图中I2)<ul>
+<li>做法：ARCHEAP分配了一个对象，该对象的大小与另一个对象的大小有关。</li>
+</ul>
+</li>
+<li>为了找到由分配器中的常见错误引起的技术，ARCHEAP还使用专门的大小(I3,I4)<ul>
+<li>比如预定义的常量（例如零或负数）来评估边界处理等</li>
+</ul>
+</li>
+</ul>
+<h4 id="deallocation"><a href="#deallocation" class="headerlink" title="deallocation"></a><strong>deallocation</strong></h4><p>使用free从堆容器中释放随机选择的堆指针</p>
+<ul>
+<li>为了避免double free(这个bug会在<code>bug invocation</code>部分涉及，这里不应该出现)，ARCHEAP会检查对象的状态。 如果ARCHEAP选择了已经释放的指针会忽略释放操作</li>
+</ul>
+<h4 id="heap-amp-buffer-writes"><a href="#heap-amp-buffer-writes" class="headerlink" title="heap &amp; buffer writes"></a><strong>heap &amp; buffer writes</strong></h4><p>将随机数据写入堆对象或全局缓冲区</p>
+<ul>
+<li>堆利用技术，写入的数据在位置和数值上应该是准确的，fuzz的纯随机生成不可行<ul>
+<li>方案<ul>
+<li>利用堆分配器的临近元数据设计来修剪其搜索空间，只从一个对象的开始或结束处写入有限数量(MAX_WRITE)的值,原型中是8个</li>
+<li>并且写入的不是完全随机的值,是ARCHEAP的产生随机值(表5中P1-4部分),可以用于分配器中的大小或指针</li>
+<li>生成的值同时引入了系统性噪声，看表5可知，线性变换或对齐等</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>并且只在有效的堆区域中写入数据(没有溢出等bug，因为这个是其他步骤专门引入)，确保操作的合法性</li>
+</ul>
+<h4 id="bug-invocation"><a href="#bug-invocation" class="headerlink" title="bug invocation"></a><strong>bug invocation</strong></h4><p>ARCHEAP会特意构建bug操作以确保bug的产生发生。当前，ARCHEAP处理堆中的六个错误：overflow、write-after-free、off-by-one overflow、off-by-one NULL overflow、double free、arbitrary free。ARCHEAP允许重复执行同一bug来模拟攻击者再次触发该bug的情况。</p>
+<ul>
+<li>对于overflow和off-by-one，ARCHEAP使用malloc_usable_size() API获取实际堆大小以确保溢出</li>
+<li>对于ptmalloc2，由于存在内存损坏错误，ptmalloc2的malloc_usable_size()不准确,ARCHEAP使用专用的单行例程来获取实际大小。 </li>
+<li>在DOUBLE和write-after-free中，ARCHEAP检查目标块是否已被释放。 如果尚未释放，则ARCHEAP将忽略此bug操作并等待下一个操作</li>
+</ul>
+<h4 id="Model-specifications"><a href="#Model-specifications" class="headerlink" title="Model specifications"></a>Model specifications</h4><p>用户可以选择提供模型规范，以指导ARCHEAP专注于某种类型的利用技术或限制目标环境的条件。当前接受五种类型的模型规范：chunk sizes, bugs, impacts, actions和knowledge。</p>
+<ul>
+<li>前四种很显然</li>
+<li>knowledge指的是有关攻击者破解ASLR的能力(即某些地址的先验知识)<ul>
+<li>用户可以指定攻击者可能知道的三种地址类型：堆地址，全局缓冲区地址和容器地址,以影响ARCHEAP将来的数据生成</li>
+</ul>
+</li>
+</ul>
+<h3 id="Detecting-Techniques-by-Impact"><a href="#Detecting-Techniques-by-Impact" class="headerlink" title="Detecting Techniques by Impact"></a>Detecting Techniques by Impact</h3><p>影响大致分为下面四类：arbitrarychunk(AC), overlapping-chunk (OC), arbitrary-write (AW)以及restricted-write (RW)</p>
+<ul>
+<li>检测AC和OC<ul>
+<li>ARCHEAP在malloc之后复制块的地址和大小， 使用这些存储的地址和大小可以快速检查操作后块是否与其数据结构（AC）或其他块（OC）重叠。</li>
+</ul>
+</li>
+<li>检测AW和RW<ul>
+<li>shadow-memory,复制其数据结构，容器和全局缓冲区,在执行任何操作时检查影子内存的差异</li>
+<li>执行过程中，只要ARCHEAP执行可修改其内部结构的操作(合法的操作)，它会同步影子内存的状态</li>
+<li>只有在前面的操作通过堆分配器函数的内部操作修改ARCHEAP的数据结构时，才会导致两者发生差异</li>
+<li>ARCHEAP将分析范围限制为它保存的数据结构来提高检测效率。<ul>
+<li>通常堆利用技术可以破坏任何数据，从而导致对整个内存空间的扫描。但是，<strong>ARCHEAP发现的技术只能修改堆或数据结构</strong></li>
+<li>进一步，<strong>ARCHEAP只能检查修改其数据结构的</strong>，而忽略堆中的，因为无法将利用与deallocation(在释放中修改元数据)引起的改变区分。</li>
+</ul>
+</li>
+<li>根据引入差异的堆操作将AW与RW区分<ul>
+<li>在allocation或deallocation中发生差异为RW</li>
+<li>否则（即heap or buffer write）为AW</li>
+<li>原因：allocation和deallocation动作中的参数很难任意控制;heap or buffer write则不然</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="运行实例"><a href="#运行实例" class="headerlink" title="运行实例"></a>运行实例</h3><p><img src="/images/archeap/fig6.png" alt="running example"></p>
+<h3 id="Generating-PoC-via-Delta-Debugging"><a href="#Generating-PoC-via-Delta-Debugging" class="headerlink" title="Generating PoC via Delta-Debugging"></a>Generating PoC via Delta-Debugging</h3><p>为了找到利用的根本原因，ARCHEAP使用delta-debugging改进了测试用例。如下图算法</p>
+<p><img src="/images/archeap/fig7.png" alt="算法"></p>
+<p>算法大致思想：对于每个action，ARCHEAP重新评估在没有它时测试用例的影响。如果原测试用例和新测试用例的影响相同，则被认为是是多余的排除掉。</p>
+<ul>
+<li>前的算法仅限于每次评估一个单独的动作。它可以很容易地扩展到用一个序列或堆动作组合在一起进行检查</li>
+<li>评估表明，当前使用单个动作的方案一旦最小化，ARCHEAP就会使用每个动作和C代码之间的一对一映射将测试用例转换为像图中人类可理解的PoC</li>
+</ul>
+<p><img src="/images/archeap/fig8.png" alt="POC示例"></p>
+<h2 id="Implementation"><a href="#Implementation" class="headerlink" title="Implementation"></a>Implementation</h2><p>扩展AFL实现</p>
+<ul>
+<li>如果发现导致利用影响的操作，则会发送定义的信号SIGUSR2，修改AFL使得只在收到此信号后保存崩溃</li>
+<li>精心实现了生成器，除了用于复制动作的预定义动作之外，不要隐式调用堆API<ul>
+<li>比如生成器使用标准错误进行日志记录，而不是使用标准输出因为其在内部调用malloc进行缓冲</li>
+</ul>
+</li>
+<li>为了防止内部数据结构的意外损坏，生成器会在随机地址中分配其数据结构<ul>
+<li>诸如溢出之类的错误操作无法修改数据结构，因为它们不会与堆块相邻。</li>
+</ul>
+</li>
+</ul>
+<h2 id="Applications"><a href="#Applications" class="headerlink" title="Applications"></a>Applications</h2><h3 id="发现的新的堆利用技术"><a href="#发现的新的堆利用技术" class="headerlink" title="发现的新的堆利用技术"></a>发现的新的堆利用技术</h3><p><img src="/images/archeap/fig9.png" alt="新的堆利用技术"></p>
+<ul>
+<li>Unsorted bin into stack (UBS).</li>
+<li>House of unsorted einherjar (HUE).</li>
+<li>Unaligned double free (UDF).</li>
+<li>Overlapping chunks using a small bin (OCS).</li>
+<li>Fast bin into other bin (FDO).</li>
+</ul>
+<h3 id="不同类型的堆分配器"><a href="#不同类型的堆分配器" class="headerlink" title="不同类型的堆分配器"></a>不同类型的堆分配器</h3><p>24小时的评估，它在10个分配器中的7个中发现了几种利用技术。(除Scudo，FreeGuard和Guarder之外)</p>
+<p><img src="/images/archeap/fig10.png" alt="实验评估"></p>
+<p>发现了一些事实</p>
+<ul>
+<li>这些分配器都容易受到double free的破坏</li>
+<li>仍然可以通过dlmalloc-2.8.6中的溢出来获得任意块。</li>
+</ul>
+<p>ARCHEAP还成功地在分配器中找到了几种与ptmalloc2不同的堆利用技术。</p>
+<ul>
+<li>ARCHEAP的模型基于分配器（第2.1节）中的通用设计，具有足够的通用性<ul>
+<li>例如tcmalloc的目标是高性能计算，其设计与ptmalloc2的设计大不相同（例如，大量使用线程本地缓存）。但是仍然遵循模型</li>
+</ul>
+</li>
+<li>ARCHEAP在mimalloc-secure，DieHarder和Mesh中发现了三个错误。作者向开发人员报告了发现，两个被认可并被修补。并且自动生成的PoC已被添加到mimalloc作为其回归测试。</li>
+</ul>
+<h3 id="Evolution-of-Security-Features"><a href="#Evolution-of-Security-Features" class="headerlink" title="Evolution of Security Features"></a>Evolution of Security Features</h3><p><img src="/images/archeap/fig11.png" alt="安全趋势"></p>
+<p>发现的一些有趣的趋势</p>
+<ul>
+<li>新的安全检查成功地减轻了在ptmalloc2的旧版本中发现的一些利用技术：libc维护很可能会对新的流行利用技术做出反应。</li>
+<li>bionic内部设计的改变导致从先前版本生成的大多数PoC无效，这表明生成的PoC的微妙之处，需要精确的参数和API调用的顺序才能成功利用<ul>
+<li>并不意味着新的bionic版本是安全的。如图所示新组件tcache确实使利用变得更加容易</li>
+</ul>
+</li>
+<li>旨在提高性能的新组件tcache削弱了堆分配器的安全性，不仅使其易于攻击，而且引入了新的利用技术</li>
+</ul>
+<h2 id="Evaluation"><a href="#Evaluation" class="headerlink" title="Evaluation"></a>Evaluation</h2><p>这部分主要关注三个问题</p>
+<ul>
+<li>ARCHEAP发现漏洞的能力与当前最先进的heaphopper相比如何</li>
+<li>ARCHEAP如何详尽的探索安全敏感的状态空间</li>
+<li>delta-debugging在去除多余的堆动作方面有多大的效果？</li>
+</ul>
+<p>在256GB内存的Intel Xeon E7-4820上进行实验。<strong>对于种子，使用了256个随机字节</strong>(这个种子作何理解)，这些字节是用来表示状态探索的起点，并不关键，因为ARCHEAP在状态探索过程中趋于收敛。</p>
+<h3 id="与heaphopper比较"><a href="#与heaphopper比较" class="headerlink" title="与heaphopper比较"></a>与heaphopper比较</h3><p>最近提出的HeapHopper是用来分析分配器的各种实现中的现有利用技术。HeapHopper强调完整性和可验证性，其方法（即符号执行）与ARCHEAP（即模糊测试）有所区分。Heaphopper的关键思想（用详细的模型指导状态探索）将其能力仅局限于验证已知利用技术的原始目的，这与此论文的方法可以发现未知技术不同。</p>
+<p>比较从三个方面进行</p>
+<ul>
+<li>探索没有特定漏洞利用模型的未知技术（例如，将HeapHopper应用于ARCHEAP所作的工作）</li>
+<li>使用部分指定的模型来探索已知技术（即评估指定模型在每种方法中的作用）</li>
+<li>使用特定漏洞利用的模型探索已知技术</li>
+</ul>
+<h4 id="New-techniques"><a href="#New-techniques" class="headerlink" title="New techniques"></a>New techniques</h4><p>每个实验进行三次，每次24小时。</p>
+<p>这里没有考虑FDO，因为FDO是FD的超集，两者难以区分。</p>
+<p><img src="/images/archeap/fig12.png" alt="实验对比"></p>
+<p>可以看到。HeapHopper在没有利用模型时无法发现任何未知的堆利用技术，它遇到了一些符号执行的基本问题：</p>
+<ul>
+<li>transactions的指数增长</li>
+<li>选择合适的size和顺序来触发利用的巨大搜索空间<ul>
+<li>这个很好理解，HeapHopper本身目标是给定利用模型，比如参数和transactions个数然后探索，但对于未知技术，缺少了一些先前约束，自然会导致搜索空间巨大</li>
+</ul>
+</li>
+</ul>
+<h4 id="Known-techniques-with-specified-models"><a href="#Known-techniques-with-specified-models" class="headerlink" title="Known techniques with specified models"></a>Known techniques with specified models</h4><p>这部分评估了给定的利用模型对各种方法的作用效果。<strong>给定的模型都是已知利用的模型，对发现新的没有帮助</strong></p>
+<p><img src="/images/archeap/fig13.png" alt="实验结果图"></p>
+<p>上面这个图时heaphopper对已知技术的模型建立。</p>
+<p>针对<strong>部分给定模型</strong>的测试，只取size和TxnList两个部分的信息。针对完全给定模型的测试，取所有的信息，实验结果如下：</p>
+<p><img src="/images/archeap/fig14.png" alt="实验结果图"></p>
+<p>可以清楚的看到在给定部分模型时，ARCHEAP好于heaphopper，但<strong>在完全给定模型(exploit-specific models)**时，heaphopper速度更快，并且发现了6个而archeap只发现了5个，这也说明了</strong>模型对符号执行相比fuzz影响更大**。</p>
+<p>这不意味着archeap差于heaphopper，因为<strong>ARCHEAP本身目的是发现新利用技术，基于这种目的，一个准确的模型本应是不可获得的</strong>(heaphopper目的则是为了验证利用技术)。此外heaphopper还引入了false positive，但archeap没有。</p>
+<h3 id="Security-Check-Coverage"><a href="#Security-Check-Coverage" class="headerlink" title="Security Check Coverage"></a>Security Check Coverage</h3><p>通过检查archeap触发的安全检查来评估。在24小时探索中，<strong>archeap触发了ptmalloc2中21个安全检查中的18个。</strong>如下图。</p>
+<p><img src="/images/archeap/fig15.png" alt="安全检查触发"></p>
+<p>只有C2,C4和C21为被触发。</p>
+<ul>
+<li>C21是一个并发漏洞相关的检查，不在工作考虑范围内</li>
+<li>C2和C4要求large chunk之间有严格的关系（例如，两个块的大小不相等但小于最小大小），这对于基于随机化的策略来说太过严格。</li>
+</ul>
+<h3 id="Delta-Debugging-Based-Minimization"><a href="#Delta-Debugging-Based-Minimization" class="headerlink" title="Delta-Debugging-Based Minimization"></a>Delta-Debugging-Based Minimization</h3><p>Delta-Debugging有效地减少了来自原始PoC的84.3％的冗余操作，得到平均包含26.1行的小型PoC（请参阅表12）。 尽管最小化做的比较初步的(每次测试消除一个独立的动作带来的影响)，但最终的PoC足够小使得可以手动分析以了解所发现技术的影响。</p>
+<p><img src="/images/archeap/fig16.png" alt="Delta-Debugging效果"></p>
+<h2 id="Discussion-and-Limitations"><a href="#Discussion-and-Limitations" class="headerlink" title="Discussion and Limitations"></a>Discussion and Limitations</h2><h3 id="Overfitting-to-fuzzing-strategies"><a href="#Overfitting-to-fuzzing-strategies" class="headerlink" title="Overfitting to fuzzing strategies"></a>Overfitting to fuzzing strategies</h3><p>模糊策略可能不足以检查某些分配器。</p>
+<ul>
+<li><p>比如chunk元数据不临近payload(这与archeap的模型的核心部分相悖从而导致整个技术失效)</p>
+</li>
+<li><p>比如分配器为其大小使用big-endian编码等。</p>
+</li>
+</ul>
+<p>对于这些分配器，<strong>则需要深入了解目标分配器来设计自己的模型</strong></p>
+<h3 id="scope"><a href="#scope" class="headerlink" title="scope"></a>scope</h3><p>前面说过archeap是只关注发现堆利用技术的，并没有涉及到具体的应用程序的上下文信息。而且archeap只关注用户空间，并没有应用到内核。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/HEAP/" rel="tag"># HEAP</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/07/15/hitcon-training-writeup/" rel="prev" title="HITCON-Training回顾pwn题工具使用与基本套路">
+                  <i class="fa fa-chevron-left"></i> HITCON-Training回顾pwn题工具使用与基本套路
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/07/22/wsl2-path/" rel="next" title="Remove Windows10 PATH from WSL PATH">
+                  Remove Windows10 PATH from WSL PATH <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : 'b36129874026ef75cd1747e169e387a4',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

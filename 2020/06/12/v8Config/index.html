@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="记录一下v8的配置过程以及在ctf比赛或者cve漏洞复现中需要用到的一些东西。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="V8配置与常用调试">
+<meta property="og:url" content="http://yoursite.com/2020/06/12/v8Config/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="记录一下v8的配置过程以及在ctf比赛或者cve漏洞复现中需要用到的一些东西。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/images/Javascript/V8/v8_commit.png">
+<meta property="article:published_time" content="2020-06-12T13:30:45.000Z">
+<meta property="article:modified_time" content="2020-06-21T13:17:28.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="V8">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/images/Javascript/V8/v8_commit.png">
+
+
+<link rel="canonical" href="http://yoursite.com/2020/06/12/v8Config/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>V8配置与常用调试 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E4%BB%A3%E7%90%86"><span class="nav-number">1.</span> <span class="nav-text">设置代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91V8"><span class="nav-number">2.</span> <span class="nav-text">编译V8</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96depot-tools"><span class="nav-number">2.1.</span> <span class="nav-text">获取depot_tools</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96v8%E6%BA%90%E7%A0%81%E4%B8%8E%E7%BC%96%E8%AF%91"><span class="nav-number">2.2.</span> <span class="nav-text">获取v8源码与编译</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E6%BA%90%E7%A0%81"><span class="nav-number">2.2.1.</span> <span class="nav-text">获取源码</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%87%E6%8D%A2%E5%88%86%E6%94%AF"><span class="nav-number">2.2.2.</span> <span class="nav-text">切换分支</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BC%96%E8%AF%91"><span class="nav-number">2.2.3.</span> <span class="nav-text">编译</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%B0%83%E8%AF%95"><span class="nav-number">3.</span> <span class="nav-text">调试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#gdb%E9%85%8D%E7%BD%AE"><span class="nav-number">3.1.</span> <span class="nav-text">gdb配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#gdb%E8%B0%83%E8%AF%95"><span class="nav-number">3.2.</span> <span class="nav-text">gdb调试</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B8%E5%85%B3%E5%AD%A6%E4%B9%A0%E8%B5%84%E6%BA%90"><span class="nav-number">4.</span> <span class="nav-text">相关学习资源</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8Ev8"><span class="nav-number">4.1.</span> <span class="nav-text">关于v8</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8Ev8-exp"><span class="nav-number">4.2.</span> <span class="nav-text">关于v8 exp</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/12/v8Config/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          V8配置与常用调试
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-06-12 21:30:45" itemprop="dateCreated datePublished" datetime="2020-06-12T21:30:45+08:00">2020-06-12</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-06-21 21:17:28" itemprop="dateModified" datetime="2020-06-21T21:17:28+08:00">2020-06-21</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Javascript/" itemprop="url" rel="index"><span itemprop="name">Javascript</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>3 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>记录一下v8的配置过程以及在ctf比赛或者cve漏洞复现中需要用到的一些东西。</p>
+<a id="more"></a>
+
+<p>其实v8的配置本来很简单的,但是因为GFW的存在，变得有点复杂，上周甚至差点把我弄崩溃了，主要是在代理设置过程，对ubuntu下代理设置不太懂，太蛋疼了。</p>
+<h2 id="设置代理"><a href="#设置代理" class="headerlink" title="设置代理"></a>设置代理</h2><p>v8配置需要用git获取depot_tools,并且depot_tools中的脚本下载了google git的文件，也需要代理才行，ubuntu下代理比较蛋疼，前面迷糊了好久，之后大概懂了。</p>
+<p>​ubuntu下大概有两个代理设置，分别是系统设置里的网络代理，全局变量代理设置，加上git的话是三个。系统设置里的网络代理好像是系统层面的对协议进行代理。这个设置很迷，设置完后某些流量是走代理了，但是并不是所有的，最后还是会出问题，这里就不用了。​需要设置的地方主要是下面两个。</p>
+<p>​首先是git代理，git的代理设置就不用多说了</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git config --global http.proxy socks5://ip:port</span><br><span class="line">git config --global https.proxy socks5://ip:port</span><br></pre></td></tr></table></figure>
+
+<p>然后是全局变量代理，<code>curl</code>等命令可能会用到，通过下面方式设置一下http_proxy和https_proxy，写入~/.bashrc，并且重新加载一下(注意前面git的代理是socks代理，这里是http代理，之前就是因为这个设置错了好久都没发现)：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> http_proxy=<span class="string">&quot;http://ip:port/&quot;</span></span><br><span class="line"><span class="built_in">export</span> https_proxy=<span class="variable">$http_proxy</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="编译V8"><a href="#编译V8" class="headerlink" title="编译V8"></a>编译V8</h2><h3 id="获取depot-tools"><a href="#获取depot-tools" class="headerlink" title="获取depot_tools"></a>获取depot_tools</h3><p>通过git获取depot_tools并将其添加进path，更新一下。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://chromium.googlesource.com/chromium/tools/depot_tools.git</span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$PATH</span>:/path/to/depot_tools <span class="comment">#source ~/.bashrc</span></span><br><span class="line">gclient</span><br></pre></td></tr></table></figure>
+
+<h3 id="获取v8源码与编译"><a href="#获取v8源码与编译" class="headerlink" title="获取v8源码与编译"></a>获取v8源码与编译</h3><h4 id="获取源码"><a href="#获取源码" class="headerlink" title="获取源码"></a>获取源码</h4><p>利用depot_tools去获取v8的源码</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir v8 &amp;&amp; <span class="built_in">cd</span> v8</span><br><span class="line">fetch v8</span><br></pre></td></tr></table></figure>
+
+<h4 id="切换分支"><a href="#切换分支" class="headerlink" title="切换分支"></a>切换分支</h4><p>对于一般的ctf题目或者说cve复现，都会给出下图的信息(patch版本或者存在漏洞的版本的hash均可)。</p>
+<img src="/images/Javascript/V8/v8_commit.png" alt=" " style="zoom:50%;" />
+
+<p>如果是漏洞信息的话，直接回滚到对应版本；如果给定的是patch的信息，则需要通过其parent信息回滚到漏洞版本。之后进行同步。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git reset --hard [commit <span class="built_in">hash</span> with vulnerability]</span><br><span class="line">gclient sync</span><br></pre></td></tr></table></figure>
+
+<h4 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h4><p>编译的话，有几个选择，大的方向是debug版本与release版本两种。选择哪种主要取决于题目的要求。</p>
+<p><strong>debug版本编译</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tools/dev/v8gen.py x64.debug</span><br><span class="line">ninja -C out.gn/x64.debug</span><br><span class="line">ninja -C out.gn/x64.debug d8 <span class="comment">#如果只编译d8的话，可以更快</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>release版本编译</strong></p>
+<p>为了既能对执行过程进行调试，又能使用gdb-v8-support.py插件的job等命令，可以在编译release版本前，在out.gn/x64.release/args.gn文件中增加以下编译选项：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">v8_enable_backtrace &#x3D; true</span><br><span class="line">v8_enable_disassembler &#x3D; true</span><br><span class="line">v8_enable_object_print &#x3D; true</span><br><span class="line">v8_enable_verify_heap &#x3D; true</span><br></pre></td></tr></table></figure>
+
+<p>之后的方式就是参照上面的debug版本编译命令简单替换：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">tools/dev/v8gen.py x64.release</span><br><span class="line">ninja -C out.gn/x64.release</span><br><span class="line">ninja -C out.gn/x64.release d8 <span class="comment">#如果只编译d8的话，可以更快</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h2><h3 id="gdb配置"><a href="#gdb配置" class="headerlink" title="gdb配置"></a>gdb配置</h3><p>编译完可以直接运行v8，也就是d8：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># release版本的话</span></span><br><span class="line"><span class="comment"># 启动交互的d8 shell</span></span><br><span class="line">./out.gn/x64.release/d8</span><br><span class="line"><span class="comment"># 用d8跑test.js</span></span><br><span class="line">./out.gn/x64.release/d8 test.js</span><br></pre></td></tr></table></figure>
+
+<p>v8中附带了很多协助gdb调试的命令，将如下命令写入~/.gdbinit来引用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> /path/to/v8/tools/gdbinit</span><br><span class="line"><span class="built_in">source</span> /path/to/v8/tools/gdb-v8-support.py</span><br><span class="line"><span class="built_in">source</span> /path/to/pwndbg/gdbinit.py //这是pwndbg所带</span><br></pre></td></tr></table></figure>
+
+<p>运行d8时，–allow-natives-syntax 选项开启可以使用一些v8运行时的支持函数，以便于本地调试，配合–allow-natives-syntax 选项在js源码中调用这些函数进行运行时分析，其中用的比较多的是下面两个：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">%DebugPrint(obj); 	&#x2F;&#x2F; 输出对象的信息</span><br><span class="line">%SystemBreak(); 	&#x2F;&#x2F; 触发调试中断，结合调试器使用</span><br></pre></td></tr></table></figure>
+
+<h3 id="gdb调试"><a href="#gdb调试" class="headerlink" title="gdb调试"></a>gdb调试</h3><p>启动gdb调试，一般步骤:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> /path/to/v8/out.gn/x64.release</span><br><span class="line">gdb ./d8 </span><br><span class="line"><span class="comment">#下面是gdb命令</span></span><br><span class="line"><span class="comment">#设置d8的输入参数 --allow-natives-syntax 开启支持函数</span></span><br><span class="line"><span class="built_in">set</span> args --allow-natives-syntax /path/to/test.js</span><br><span class="line"><span class="comment"># 启动程序</span></span><br><span class="line">r </span><br><span class="line"><span class="comment">#在%SystemBreak() 处中断</span></span><br><span class="line">c</span><br></pre></td></tr></table></figure>
+
+<p>一些常用的命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">job obj_ptr(address)#查看某个地址作为对象指针的对象的详细信息</span><br><span class="line">telescope [-h] [address] [count]#从指定地址开始递归解引用指针 ，就是查看内存数据</span><br></pre></td></tr></table></figure>
+
+<h2 id="相关学习资源"><a href="#相关学习资源" class="headerlink" title="相关学习资源"></a>相关学习资源</h2><h3 id="关于v8"><a href="#关于v8" class="headerlink" title="关于v8"></a>关于v8</h3><ul>
+<li>v8 Base<ul>
+<li><a target="_blank" rel="noopener" href="https://migraine-sudo.github.io/2020/02/15/v8/">https://migraine-sudo.github.io/2020/02/15/v8/</a></li>
+</ul>
+</li>
+<li>V8 javascript engine代码阅读<ul>
+<li><a target="_blank" rel="noopener" href="http://eternalsakura13.com/2018/07/09/zujian/">http://eternalsakura13.com/2018/07/09/zujian/</a></li>
+</ul>
+</li>
+<li>《JavaScript 引擎 V8 执行流程概述》<ul>
+<li><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/t__Jqzg1rbTlsCHXKMwh6A">https://mp.weixin.qq.com/s/t__Jqzg1rbTlsCHXKMwh6A</a></li>
+</ul>
+</li>
+<li>《ArrayBuffer，二进制数组》<ul>
+<li><a target="_blank" rel="noopener" href="https://zh.javascript.info/arraybuffer-binary-arrays">https://zh.javascript.info/arraybuffer-binary-arrays</a></li>
+</ul>
+</li>
+<li>《V8 是怎么跑起来的 —— V8 中的对象表示》<ul>
+<li><a target="_blank" rel="noopener" href="https://juejin.im/post/5cc7dc5af265da038d0b514d">https://juejin.im/post/5cc7dc5af265da038d0b514d</a></li>
+</ul>
+</li>
+<li>《奇技淫巧学 V8 之二，对象在 V8 内的表达》<ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/28780798">https://zhuanlan.zhihu.com/p/28780798</a></li>
+</ul>
+</li>
+<li>《V8 Bug Hunting 之 JS 类型对象的内存布局总结》<ul>
+<li><a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/185339">https://www.anquanke.com/post/id/185339</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="关于v8-exp"><a href="#关于v8-exp" class="headerlink" title="关于v8 exp"></a>关于v8 exp</h3><ul>
+<li>《GToad Blog》<ul>
+<li><a target="_blank" rel="noopener" href="https://gtoad.github.io/">https://gtoad.github.io/</a></li>
+</ul>
+</li>
+<li>《从一道CTF题零基础学V8漏洞利用》<ul>
+<li><a target="_blank" rel="noopener" href="https://www.freebuf.com/vuls/203721.html">https://www.freebuf.com/vuls/203721.html</a></li>
+</ul>
+</li>
+<li>《CVE-2019-5782 v8数组越界 漏洞复现》<ul>
+<li><a target="_blank" rel="noopener" href="https://www.sunxiaokong.xyz/2020-02-25/lzx-cve-2019-5782/">https://www.sunxiaokong.xyz/2020-02-25/lzx-cve-2019-5782/</a></li>
+</ul>
+</li>
+<li>v8利用入门：从越界访问到RCE<ul>
+<li><a target="_blank" rel="noopener" href="https://www.freebuf.com/vuls/230182.html">https://www.freebuf.com/vuls/230182.html</a></li>
+</ul>
+</li>
+<li>StarCTF 2019 (*CTF) oob 初探V8漏洞利用<ul>
+<li><a target="_blank" rel="noopener" href="https://www.freebuf.com/vuls/203721.html">https://www.freebuf.com/vuls/203721.html</a></li>
+</ul>
+</li>
+<li>Chrome v8 exploit - OOB<ul>
+<li><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/5368">https://xz.aliyun.com/t/5368</a></li>
+</ul>
+</li>
+<li>*CTF2019 OOB-v8 Writeup<ul>
+<li><a target="_blank" rel="noopener" href="https://hpasserby.top/post/825d66e8.html">https://hpasserby.top/post/825d66e8.html</a></li>
+</ul>
+</li>
+<li>star ctf Chrome oob Writeup<ul>
+<li><a target="_blank" rel="noopener" href="http://eternalsakura13.com/2019/04/29/*ctf_oob/">http://eternalsakura13.com/2019/04/29/*ctf_oob/</a></li>
+</ul>
+</li>
+<li>*CTF 2019 – Chrome oob-v8<ul>
+<li><a target="_blank" rel="noopener" href="http://www.hackitek.com/starctf-2019-Chrome-oob-v8/">http://www.hackitek.com/starctf-2019-Chrome-oob-v8/</a></li>
+</ul>
+</li>
+<li>Exploiting v8: *CTF 2019 oob-v8<ul>
+<li><a target="_blank" rel="noopener" href="https://syedfarazabrar.com/2019-12-13-starctf-oob-v8-indepth/">https://syedfarazabrar.com/2019-12-13-starctf-oob-v8-indepth/</a></li>
+</ul>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/V8/" rel="tag"># V8</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/05/25/heapOverflow2/" rel="prev" title="堆溢出(2)-堆内存分配操作流程">
+                  <i class="fa fa-chevron-left"></i> 堆溢出(2)-堆内存分配操作流程
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/06/14/happyheap/" rel="next" title="堆溢出(3)-堆攻击手法">
+                  堆溢出(3)-堆攻击手法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : '17d90c0cb0ef77d7570f8330737383f6',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

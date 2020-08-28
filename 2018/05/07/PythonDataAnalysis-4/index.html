@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="&amp;emsp;&amp;emsp;Jieba是基于统计的分词方法，jieba分词采用了动态规范查找最大概率路径，找出基于词频的最大切分组合。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PythonDataAnalysis_4--中文分词和文本向量化">
+<meta property="og:url" content="http://yoursite.com/2018/05/07/PythonDataAnalysis-4/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="&amp;emsp;&amp;emsp;Jieba是基于统计的分词方法，jieba分词采用了动态规范查找最大概率路径，找出基于词频的最大切分组合。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/4/fenci_result.png">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/4/result_1.png">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/4/result_2.png">
+<meta property="article:published_time" content="2018-05-07T12:18:50.000Z">
+<meta property="article:modified_time" content="2020-01-09T16:50:52.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="Python数据分析">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/4/fenci_result.png">
+
+
+<link rel="canonical" href="http://yoursite.com/2018/05/07/PythonDataAnalysis-4/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>PythonDataAnalysis_4--中文分词和文本向量化 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Jieba"><span class="nav-number">1.</span> <span class="nav-text">Jieba</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E8%AF%8D%E6%A8%A1%E5%BC%8F"><span class="nav-number">1.1.</span> <span class="nav-text">分词模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E8%AF%8D%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.</span> <span class="nav-text">分词方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Word2vec"><span class="nav-number">2.</span> <span class="nav-text">Word2vec</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B"><span class="nav-number">3.</span> <span class="nav-text">实例</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%89%E5%8F%96%E8%AF%AD%E6%96%99%E6%96%87%E6%9C%AC%EF%BC%8C%E7%94%A8jieba%E8%BF%9B%E8%A1%8C%E5%88%86%E8%AF%8D"><span class="nav-number">3.1.</span> <span class="nav-text">选取语料文本，用jieba进行分词</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#word2vec%E5%90%91%E9%87%8F%E5%8C%96"><span class="nav-number">3.2.</span> <span class="nav-text">word2vec向量化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E7%BB%93%E6%9E%9C"><span class="nav-number">3.3.</span> <span class="nav-text">运行结果</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/05/07/PythonDataAnalysis-4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PythonDataAnalysis_4--中文分词和文本向量化
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-05-07 20:18:50" itemprop="dateCreated datePublished" datetime="2018-05-07T20:18:50+08:00">2018-05-07</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-01-10 00:50:52" itemprop="dateModified" datetime="2020-01-10T00:50:52+08:00">2020-01-10</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/learn/" itemprop="url" rel="index"><span itemprop="name">learn</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.4k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>5 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>&emsp;&emsp;Jieba是基于统计的分词方法，jieba分词采用了动态规范查找最大概率路径，找出基于词频的最大切分组合。</p>
+<a id="more"></a>
+
+<h2 id="Jieba"><a href="#Jieba" class="headerlink" title="Jieba"></a>Jieba</h2><h3 id="分词模式"><a href="#分词模式" class="headerlink" title="分词模式"></a>分词模式</h3><p>&emsp;&emsp;Jieba有三种分词模式:</p>
+<ul>
+<li>全模式：输出一个字串的所有分词</li>
+<li>精准模式(默认)：对句子的一个概率最佳分词</li>
+<li>搜索引擎模式：提供了精确模式的再分词，将分词再次拆分为短词</li>
+</ul>
+<h3 id="分词方法"><a href="#分词方法" class="headerlink" title="分词方法"></a>分词方法</h3><pre><code>Cut(self,sentence,cut_all=False,HMM=True)
+Cut方法接受三个参数：需要分词的字串，cut_all参数控制是否采用全模式，HMM参数用来控制是否使用HMMH模型；
+Cut_for_search(self,sentence,HMM=True)
+Cut_for_search接受两个参数：字串，是否使用HMMH模型，适用于搜索引擎构建倒排索引分词粒度较细
+jieba.load_userdict(fileName)加载自定义的字典路径</code></pre>
+<h2 id="Word2vec"><a href="#Word2vec" class="headerlink" title="Word2vec"></a>Word2vec</h2><p>&emsp;&emsp;Word2vec词向量模型：通过神经网络机器学习算法来训练语言模型，并在训练过程中求所对应的词向量的方法。</p>
+<h2 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h2><h3 id="选取语料文本，用jieba进行分词"><a href="#选取语料文本，用jieba进行分词" class="headerlink" title="选取语料文本，用jieba进行分词"></a>选取语料文本，用jieba进行分词</h3><p>&emsp;&emsp;这里选取的是金庸的小说天龙八部的全文，首先进行jieba分词，采用的是精准分词:<br>    #encoding=utf-8<br>    import sys<br>    import re<br>    import codecs<br>    import os<br>    import shutil<br>    import jieba<br>    import jieba.analyse</p>
+<pre><code>#导入自定义人物词典帮助分词
+jieba.load_userdict(&quot;renwu.txt&quot;)
+
+#删除原来的文件，创建并打开新文件
+resName = &quot;result.txt&quot;
+if os.path.exists(resName):
+    os.remove(resName)
+result = codecs.open(resName, &#39;w&#39;,&#39;utf-8&#39;)
+#语料文本
+fileName=&#39;tlbb.txt&#39;
+source = open(fileName, &#39;r&#39;,encoding=&#39;utf-8&#39;)
+#去标点符号，有点丑陋
+line = source.readline().replace(&#39;，&#39;,&#39;&#39;).replace(&#39;。&#39;,&#39;&#39;).replace(&#39;《&#39;,&#39;&#39;).replace(&#39;》&#39;,&#39;&#39;).replace(&#39;/&#39;,&#39;&#39;).replace(&#39;？&#39;,&#39;&#39;).replace(&#39;：&#39;,&#39;&#39;).replace(&#39;；&#39;,&#39;&#39;).replace(&#39;‘&#39;,&#39;&#39;).replace(&#39;’&#39;,&#39;&#39;).replace(&#39;”&#39;,&#39;&#39;).replace(&#39;“&#39;,&#39;&#39;).replace(&#39;！&#39;,&#39;&#39;).replace(&#39;【&#39;,&#39;&#39;).replace(&#39;】&#39;,&#39;&#39;).replace(&#39;、&#39;,&#39;&#39;).replace(&#39;￥&#39;,&#39;&#39;).replace(&#39;%&#39;,&#39;&#39;).replace(&#39;*&#39;,&#39;&#39;).replace(&#39;-&#39;,&#39;&#39;).replace(&#39;=&#39;,&#39;&#39;).replace(&#39;+&#39;,&#39;&#39;).replace(&#39;&amp;&#39;,&#39;&#39;).replace(&#39;……&#39;,&#39;&#39;).replace(&#39;#&#39;,&#39;&#39;).replace(&#39;@&#39;,&#39;&#39;).replace(&#39;~&#39;,&#39;&#39;).replace(&#39;·&#39;,&#39;&#39;).replace(&#39;`&#39;,&#39;&#39;).replace(&#39;!&#39;,&#39;&#39;).replace(&#39;$&#39;,&#39;&#39;).replace(&#39;^&#39;,&#39;&#39;).replace(&#39;_&#39;,&#39;&#39;).replace(&#39;&#123;&#39;,&#39;&#39;).replace(&#39;&#125;&#39;,&#39;&#39;).replace(&#39;[&#39;,&#39;&#39;).replace(&#39;]&#39;,&#39;&#39;).replace(&#39;:&#39;,&#39;&#39;).replace(&#39;;&#39;,&#39;&#39;).replace(&#39;&lt;&#39;,&#39;&#39;).replace(&#39;&gt;&#39;,&#39;&#39;).replace(&#39;,&#39;,&#39;&#39;).replace(&#39;.&#39;,&#39;&#39;)
+while line != &quot;&quot;:
+    line = line.rstrip(&#39;\n&#39;)
+    seglist = jieba.cut(line, cut_all=False)
+    output = &#39; &#39;.join(list(seglist))
+    result.write(output + &#39; &#39;)
+    #去标点符号，有点丑陋
+    line = source.readline().replace(&#39;，&#39;,&#39;&#39;).replace(&#39;。&#39;,&#39;&#39;).replace(&#39;《&#39;,&#39;&#39;).replace(&#39;》&#39;,&#39;&#39;).replace(&#39;/&#39;,&#39;&#39;).replace(&#39;？&#39;,&#39;&#39;).replace(&#39;：&#39;,&#39;&#39;).replace(&#39;；&#39;,&#39;&#39;).replace(&#39;‘&#39;,&#39;&#39;).replace(&#39;’&#39;,&#39;&#39;).replace(&#39;”&#39;,&#39;&#39;).replace(&#39;“&#39;,&#39;&#39;).replace(&#39;！&#39;,&#39;&#39;).replace(&#39;【&#39;,&#39;&#39;).replace(&#39;】&#39;,&#39;&#39;).replace(&#39;、&#39;,&#39;&#39;).replace(&#39;￥&#39;,&#39;&#39;).replace(&#39;%&#39;,&#39;&#39;).replace(&#39;*&#39;,&#39;&#39;).replace(&#39;-&#39;,&#39;&#39;).replace(&#39;=&#39;,&#39;&#39;).replace(&#39;+&#39;,&#39;&#39;).replace(&#39;&amp;&#39;,&#39;&#39;).replace(&#39;……&#39;,&#39;&#39;).replace(&#39;#&#39;,&#39;&#39;).replace(&#39;@&#39;,&#39;&#39;).replace(&#39;~&#39;,&#39;&#39;).replace(&#39;·&#39;,&#39;&#39;).replace(&#39;`&#39;,&#39;&#39;).replace(&#39;!&#39;,&#39;&#39;).replace(&#39;$&#39;,&#39;&#39;).replace(&#39;^&#39;,&#39;&#39;).replace(&#39;_&#39;,&#39;&#39;).replace(&#39;&#123;&#39;,&#39;&#39;).replace(&#39;&#125;&#39;,&#39;&#39;).replace(&#39;[&#39;,&#39;&#39;).replace(&#39;]&#39;,&#39;&#39;).replace(&#39;:&#39;,&#39;&#39;).replace(&#39;;&#39;,&#39;&#39;).replace(&#39;&lt;&#39;,&#39;&#39;).replace(&#39;&gt;&#39;,&#39;&#39;).replace(&#39;,&#39;,&#39;&#39;).replace(&#39;.&#39;,&#39;&#39;)
+else:
+    print(&#39;End file&#39;)
+    result.write(&#39;\r\n&#39;)  
+    source.close()</code></pre>
+<p>这里加载了如下自定义词典，里面为小说中的一些人物名和专有词以帮助分词：</p>
+<pre><code>段誉
+大理
+皇储
+皇太弟
+镇南王
+大将军
+段正淳
+世子
+段延庆
+刀白凤
+大理
+宣仁帝 
+木婉清
+秦红棉
+段正淳
+发妻
+郡主
+贵妃
+娘娘
+宪宗
+皇后 
+萧峰
+萧远山
+乔峰
+丐帮
+帮主
+辽国
+大王
+楚王
+雁门关 
+阿朱
+姑苏慕容
+阮星竹
+虚竹
+虚竹子
+逍遥派
+掌门
+天山
+缥缈峰
+灵鹫宫
+西夏
+驸马
+梦郎
+粉面郎君
+武潘安
+李清露 
+王语嫣
+李青萝
+锺灵
+甘宝宝
+晓蕾
+李清露
+阿紫
+段正明 
+华赫艮 
+范骅 
+巴天石
+朱丹臣 
+褚万里
+古笃诚
+大理国
+傅思归
+高升泰
+高泰明
+过彦之
+崔百泉
+本因
+大师
+本观
+本相
+本参
+枯荣
+长老
+黄眉僧
+鸠摩智
+无崖子
+李秋水
+天山童姥
+梅剑
+兰剑
+竹剑
+菊剑
+余婆
+石嫂
+符敏仪
+程青霜
+岳老三
+叶二娘
+段延庆
+云中鹤
+柯百岁
+玄悲
+禅师
+河北
+骆氏
+三雄
+章虚道人
+单叔山
+单季山
+单小山
+谭公
+谭婆
+赵钱孙
+王维义
+鹤云道长
+单正
+方大雄
+杜二哥
+乔三槐
+乔婆婆 
+玄苦
+扫地神僧
+玄慈大师
+神山上人
+观心
+道清
+觉贤
+融智 
+神音
+五叶
+智光
+破嗔 
+破痴
+玄痛
+玄难
+玄寂
+玄因
+玄惭
+玄渡
+玄愧
+玄止
+玄念
+玄净
+玄垢
+玄生
+玄灭
+玄鸣
+玄石
+玄澄
+慧方
+慧镜
+慧真
+慧观
+慧轮
+青松
+止清
+止湛
+止渊
+缘根
+苏星河
+琴魔
+康广陵
+棋颠
+范百龄
+苟读
+画圣
+吴领军
+神医
+薛慕华
+冯阿三
+石清风
+李傀儡
+桑土公
+玄黄子
+章达夫
+端木元
+黎夫人
+乌老大
+崔绿华
+卓不凡
+钦岛主
+霍洞主
+司马岛主
+于洞主
+安洞主
+九翼道人
+区岛主
+云岛主
+珠崖大怪
+珠崖二怪
+哈大霸
+汪剑通
+马大元
+徐冲霄
+奚山河
+吴长风
+陈孤雁
+宋长老
+吕章
+白世镜
+全冠清
+蒋舵主
+张全祥
+方舵主
+李春来
+刘竹庄
+慕容复
+慕容博
+蔡庆图
+阿碧
+包不同
+风波恶
+公冶乾
+邓百川
+马五德
+龚光杰
+褚师弟
+容子矩
+干光豪
+葛光佩
+司空玄</code></pre>
+<p>&emsp;&emsp;在代码中用了大量的replace进行标点符号的去除，然后进行分词后写入结果文件result.txt。</p>
+<p>&emsp;&emsp;分词结果如下图：</p>
+<p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/4/fenci_result.png" alt="分词结果"></p>
+<h3 id="word2vec向量化"><a href="#word2vec向量化" class="headerlink" title="word2vec向量化"></a>word2vec向量化</h3><p>&emsp;&emsp;首先加载语料，然后用word2vec.Word2Vec进行训练，最后对模型进行保存</p>
+<pre><code>from gensim.models import word2vec
+import logging
+logging.basicConfig(format=&#39;%(asctime)s:%(levelname)s:%(message)s&#39;,level=logging.INFO)
+sentences=word2vec.Text8Corpus(&quot;result.txt&quot;)
+model=word2vec.Word2Vec(sentences,size=200)
+print(model[&#39;萧峰&#39;])
+print(model.similarity(&quot;慕容复&quot;,&quot;萧峰&quot;))
+print(model.most_similar(&quot;萧峰&quot;,topn=10))
+print(model.doesnt_match(&quot;段誉 虚竹 萧峰 大师&quot;.split()))
+model.save(&quot;tlbb.model&quot;)</code></pre>
+<ul>
+<li>print(model[‘萧峰’])打印出来萧峰的向量矩阵； </li>
+<li>print(model.similarity(“慕容复”,”萧峰”))打印出两者的相关程度； </li>
+<li>print(model.most_similar(“萧峰”,topn=10))打印与其相关最高的前十个词； </li>
+<li>print(model.doesnt_match(“段誉 虚竹 萧峰 大师”.split()))打印出四者中最不相关的一个；</li>
+<li>最后将模型保存为tlbb.model以备后续使用。</li>
+</ul>
+<h3 id="运行结果"><a href="#运行结果" class="headerlink" title="运行结果"></a>运行结果</h3><p>萧峰的向量矩阵:</p>
+<p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/4/result_1.png" alt="结果1"></p>
+<p>其余三个输出信息:<br><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/4/result_2.png" alt="结果2"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/" rel="tag"># Python数据分析</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/05/07/PythonDataAnalysis-3/" rel="prev" title="PythonDataAnalysis_3--scrapy框架">
+                  <i class="fa fa-chevron-left"></i> PythonDataAnalysis_3--scrapy框架
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/05/07/PythonDataAnalysis-5/" rel="next" title="PythonDataAnalysis_5--使用贝叶斯算法分类垃圾邮件">
+                  PythonDataAnalysis_5--使用贝叶斯算法分类垃圾邮件 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : '219500ad0cafafd6b9310ae4473f4d09',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

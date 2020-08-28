@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="Android逆向，理解反汇编得到的smali文件格式">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android逆向分析初步(2)">
+<meta property="og:url" content="http://yoursite.com/2018/09/19/android-re-2/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="Android逆向，理解反汇编得到的smali文件格式">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-09-19T01:41:16.000Z">
+<meta property="article:modified_time" content="2020-07-22T12:58:26.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="Android">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://yoursite.com/2018/09/19/android-re-2/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Android逆向分析初步(2) | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#AndroidMenifest-xml"><span class="nav-number">1.</span> <span class="nav-text">AndroidMenifest.xml</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#smali%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">smali文件格式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E9%83%A8%E7%B1%BB"><span class="nav-number">2.1.</span> <span class="nav-text">内部类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B3%A8%E8%A7%A3%E7%B1%BB"><span class="nav-number">2.2.</span> <span class="nav-text">注解类</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MemberClasses"><span class="nav-number">2.2.1.</span> <span class="nav-text">MemberClasses</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Enclossing"><span class="nav-number">2.2.2.</span> <span class="nav-text">Enclossing</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%91%E5%90%AC%E5%99%A8"><span class="nav-number">2.3.</span> <span class="nav-text">监听器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90%E7%B1%BB"><span class="nav-number">2.4.</span> <span class="nav-text">自动生成类</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#R%E7%B1%BB"><span class="nav-number">2.4.1.</span> <span class="nav-text">R类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#BuildConfig%E7%B1%BB"><span class="nav-number">2.4.2.</span> <span class="nav-text">BuildConfig类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B3%A8%E8%A7%A3%E7%B1%BB-1"><span class="nav-number">2.4.3.</span> <span class="nav-text">注解类</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#java%E4%BB%A3%E7%A0%81%E5%9C%A8smali%E6%96%87%E4%BB%B6%E4%B8%AD%E7%9A%84%E8%A1%A8%E7%8E%B0"><span class="nav-number">3.</span> <span class="nav-text">java代码在smali文件中的表现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BE%AA%E7%8E%AF%E8%AF%AD%E5%8F%A5"><span class="nav-number">3.1.</span> <span class="nav-text">循环语句</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#switch%E8%AF%AD%E5%8F%A5"><span class="nav-number">3.2.</span> <span class="nav-text">switch语句</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#try-catch%E8%AF%AD%E5%8F%A5"><span class="nav-number">3.3.</span> <span class="nav-text">try&#x2F;catch语句</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/09/19/android-re-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Android逆向分析初步(2)
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-09-19 09:41:16" itemprop="dateCreated datePublished" datetime="2018-09-19T09:41:16+08:00">2018-09-19</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-07-22 20:58:26" itemprop="dateModified" datetime="2020-07-22T20:58:26+08:00">2020-07-22</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>5 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <center>Android逆向，理解反汇编得到的smali文件格式</center>
+
+<a id="more"></a>
+
+<hr>
+<h2 id="AndroidMenifest-xml"><a href="#AndroidMenifest-xml" class="headerlink" title="AndroidMenifest.xml"></a>AndroidMenifest.xml</h2><p>&emsp;&emsp;AndroidMenifest.xml极其重要，记录着软件的包名、运行的系统版本、用到的组件等基本信息</p>
+<ul>
+<li>intent-filter指定Activity启动意图；</li>
+<li>android.intent.action.MAIN表示这个activity为程序的主Activity(没有指定则LAUNCHER无法匹配主Activity，程序没有图标)</li>
+<li>android.intent.category.LAUNCHER表示这个Activity可以通过LAUNCHER启动(如果所有的activity都没添加，程序将在程序列表不可见)</li>
+</ul>
+<p>&emsp;&emsp;重点在Application类 ，主要用于在组件间传递全局变量或Activity启动前做初始化工作.由于Applicaion类比程序中其他类都启动的早，一些商业软件将授权验证代码转移到此类中。</p>
+<h2 id="smali文件格式"><a href="#smali文件格式" class="headerlink" title="smali文件格式"></a>smali文件格式</h2><h3 id="内部类"><a href="#内部类" class="headerlink" title="内部类"></a>内部类</h3><p>&emsp;&emsp;baksmali反编译dex文件时，会为每个类单独生成一个smali文件。反编译的smali代码中产生了诸如MainActivity$SNChecker.smali的文件，这是内部类文件名的格式”[外部类]$[内部类].smali”。</p>
+<p>&emsp;&emsp;比如MainActivity$SNChecker.smali便是MainActivty的一个内部类SNChecker,而MainActivity$1.smali被称作MainActivity的一个示例，在下文将会看到</p>
+<h3 id="注解类"><a href="#注解类" class="headerlink" title="注解类"></a>注解类</h3><p>&emsp;&emsp;Android注解包有两个，抛开不对外开放的dalvik.annotation不谈，另一个是android.annotation.</p>
+<p>&emsp;&emsp;在反汇编的smali中很多地方都使用了注解类,这里做一下分类说明.</p>
+<h4 id="MemberClasses"><a href="#MemberClasses" class="headerlink" title="MemberClasses"></a>MemberClasses</h4><p>MemberClasses注解是编译时自动加上的，是一个系统注解，为父类提供一个MemberClasses列表，子类成员集合，或者说是内部类列表。<br>在MainActivity.smali中的片段：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># annotations</span><br><span class="line">.annotation system Ldalvik&#x2F;annotation&#x2F;MemberClasses;</span><br><span class="line">    value &#x3D; &#123;</span><br><span class="line">        Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity$SNChecker;</span><br><span class="line">    &#125;</span><br><span class="line">.end annotation</span><br></pre></td></tr></table></figure>
+<p>可以看到的是SNChecker内部类</p>
+<h4 id="Enclossing"><a href="#Enclossing" class="headerlink" title="Enclossing"></a>Enclossing</h4><p>Enclossing注解用来说明作用范围<br>EnclossingMethord表明作用于一个方法，value表明位置<br>如MainActivity$1.smali中的一段:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># annotations</span><br><span class="line">.annotation system Ldalvik&#x2F;annotation&#x2F;EnclosingMethod;</span><br><span class="line">    value &#x3D; Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity;-&gt;onCreate(Landroid&#x2F;os&#x2F;Bundle;)V</span><br><span class="line">.end annotation</span><br></pre></td></tr></table></figure>
+
+<p>作用于MainActivity的onCreate方法</p>
+<p>相似的，EnclossingClass表明作用于一个类，value表明作用类。</p>
+<p>MainActivity$SNChecker.smali中的一段：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"># annotations</span><br><span class="line">.annotation system Ldalvik&#x2F;annotation&#x2F;EnclosingClass;</span><br><span class="line">    value &#x3D; Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity;</span><br><span class="line">.end annotation</span><br><span class="line"></span><br><span class="line">.annotation system Ldalvik&#x2F;annotation&#x2F;InnerClass;</span><br><span class="line">    accessFlags &#x3D; 0x1</span><br><span class="line">    name &#x3D; &quot;SNChecker&quot;</span><br><span class="line">.end annotation</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，作用于MainAcitivity类，后面还有一个InnerClass注解;</p>
+<p>InnerClass注解,表示是内部类，accessFlags访问标志，枚举值：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">enum&#123;</span><br><span class="line">    kDexVisibilityBuild &#x3D; 0x00,</span><br><span class="line">    kDexVisibilityRuntime &#x3D; 0x01,</span><br><span class="line">    kDexVisibilitySytem &#x3D; 0x2,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>name是名字</p>
+<h3 id="监听器"><a href="#监听器" class="headerlink" title="监听器"></a>监听器</h3><p>监听器设置的流程:</p>
+<ul>
+<li>新建MainActivity$1实例具体可以在MainActivity$1.smali看到;</li>
+<li>初始化MainActivity$1示例;</li>
+<li>invoke设置按钮点击事件监听器</li>
+</ul>
+<p>如下例:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">.line 32</span><br><span class="line">iget-object v0, p0, Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity;-&gt;btnAnno:Landroid&#x2F;widget&#x2F;Button;  #获取button对象</span><br><span class="line"></span><br><span class="line">new-instance v1, Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity$1;#新建MainActivity$1实例</span><br><span class="line"></span><br><span class="line">invoke-direct &#123;v1, p0&#125;, Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity$1;-&gt;&lt;init&gt;(Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity;)V #初始化MainActivity$1实例</span><br><span class="line"></span><br><span class="line">invoke-virtual &#123;v0, v1&#125;, Landroid&#x2F;widget&#x2F;Button;-&gt;setOnClickListener(Landroid&#x2F;view&#x2F;View$OnClickListener;)V #设置按钮点击事件监听器</span><br><span class="line"></span><br><span class="line">.line 40</span><br><span class="line">iget-object v0, p0, Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity;-&gt;btnCheckSN:Landroid&#x2F;widget&#x2F;Button;</span><br><span class="line"></span><br><span class="line">new-instance v1, Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity$2;</span><br><span class="line"></span><br><span class="line">invoke-direct &#123;v1, p0&#125;, Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity$2;-&gt;&lt;init&gt;(Lcom&#x2F;droider&#x2F;crackme0502&#x2F;MainActivity;)V</span><br><span class="line"></span><br><span class="line">invoke-virtual &#123;v0, v1&#125;, Landroid&#x2F;widget&#x2F;Button;-&gt;setOnClickListener(Landroid&#x2F;view&#x2F;View$OnClickListener;)V</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="自动生成类"><a href="#自动生成类" class="headerlink" title="自动生成类"></a>自动生成类</h3><p>使用Android SDK默认生成的公工程会自动添加一些类.</p>
+<h4 id="R类"><a href="#R类" class="headerlink" title="R类"></a>R类</h4><p>R类包含大量的资源类，一段R.smali示例如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">.class public final Lcom&#x2F;droider&#x2F;crackme0502&#x2F;R;</span><br><span class="line">.super Ljava&#x2F;lang&#x2F;Object;</span><br><span class="line">.source &quot;R.java&quot;</span><br><span class="line"></span><br><span class="line"># annotations</span><br><span class="line">.annotation system Ldalvik&#x2F;annotation&#x2F;MemberClasses;</span><br><span class="line">    value &#x3D; &#123;</span><br><span class="line">        Lcom&#x2F;droider&#x2F;crackme0502&#x2F;R$attr;,</span><br><span class="line">        Lcom&#x2F;droider&#x2F;crackme0502&#x2F;R$dimen;,</span><br><span class="line">        Lcom&#x2F;droider&#x2F;crackme0502&#x2F;R$drawable;,</span><br><span class="line">        Lcom&#x2F;droider&#x2F;crackme0502&#x2F;R$id;,</span><br><span class="line">        Lcom&#x2F;droider&#x2F;crackme0502&#x2F;R$layout;,</span><br><span class="line">        Lcom&#x2F;droider&#x2F;crackme0502&#x2F;R$menu;,</span><br><span class="line">        Lcom&#x2F;droider&#x2F;crackme0502&#x2F;R$string;,</span><br><span class="line">        Lcom&#x2F;droider&#x2F;crackme0502&#x2F;R$style;</span><br><span class="line">    &#125;</span><br><span class="line">.end annotation</span><br><span class="line"></span><br><span class="line"># direct methods</span><br><span class="line">.method public constructor &lt;init&gt;()V</span><br><span class="line">    .locals 0</span><br><span class="line"></span><br><span class="line">    .prologue</span><br><span class="line">    .line 10</span><br><span class="line">    invoke-direct &#123;p0&#125;, Ljava&#x2F;lang&#x2F;Object;-&gt;&lt;init&gt;()V</span><br><span class="line"></span><br><span class="line">    return-void</span><br><span class="line">.end method</span><br></pre></td></tr></table></figure>
+
+<p>可以看到注解里列出了大量的子类，这些子类每个都有单独的smali文件可以查看。</p>
+<h4 id="BuildConfig类"><a href="#BuildConfig类" class="headerlink" title="BuildConfig类"></a>BuildConfig类</h4><p>只包含一个boolean类型的DEBUG字段标识程序发布的版本类型，默认为true。</p>
+<h4 id="注解类-1"><a href="#注解类-1" class="headerlink" title="注解类"></a>注解类</h4><p>没啥说的，影响不大。</p>
+<h2 id="java代码在smali文件中的表现"><a href="#java代码在smali文件中的表现" class="headerlink" title="java代码在smali文件中的表现"></a>java代码在smali文件中的表现</h2><p>几个重要的语句结构:</p>
+<ul>
+<li>循环语句</li>
+<li>switch语句</li>
+<li>try catch语句</li>
+</ul>
+<h3 id="循环语句"><a href="#循环语句" class="headerlink" title="循环语句"></a>循环语句</h3><p>循环主要有三种：</p>
+<ul>
+<li>迭代器循环，hasNext()判断</li>
+<li>传统for循环</li>
+<li>while循环与for循环基本相同，只是判定位置不同</li>
+</ul>
+<h3 id="switch语句"><a href="#switch语句" class="headerlink" title="switch语句"></a>switch语句</h3><p>switch语句的结构非常清楚:<br>xyyy-switch分支，xswitch_data_0指定case区域</p>
+<p>示例：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line">packed-switch p1, :pswitch_data_0</span><br><span class="line"></span><br><span class="line">.line 36</span><br><span class="line">const-string v0, &quot;she is a person&quot;</span><br><span class="line"></span><br><span class="line">.line 39</span><br><span class="line">:goto_0</span><br><span class="line">return-object v0</span><br><span class="line"></span><br><span class="line">.line 24</span><br><span class="line">:pswitch_0</span><br><span class="line">const-string v0, &quot;she is a baby&quot;</span><br><span class="line"></span><br><span class="line">.line 25</span><br><span class="line">goto :goto_0</span><br><span class="line"></span><br><span class="line">.line 27</span><br><span class="line">:pswitch_1</span><br><span class="line">const-string v0, &quot;she is a girl&quot;</span><br><span class="line"></span><br><span class="line">.line 28</span><br><span class="line">goto :goto_0</span><br><span class="line"></span><br><span class="line">.line 30</span><br><span class="line">:pswitch_2</span><br><span class="line">const-string v0, &quot;she is a woman&quot;</span><br><span class="line"></span><br><span class="line">.line 31</span><br><span class="line">goto :goto_0</span><br><span class="line"></span><br><span class="line">.line 33</span><br><span class="line">:pswitch_3</span><br><span class="line">const-string v0, &quot;she is an obasan&quot;</span><br><span class="line"></span><br><span class="line">.line 34</span><br><span class="line">goto :goto_0</span><br><span class="line"></span><br><span class="line">.line 22</span><br><span class="line">nop</span><br><span class="line"></span><br><span class="line">:pswitch_data_0</span><br><span class="line">.packed-switch 0x0  #case区域 从0开始递增</span><br><span class="line">    :pswitch_0   #case 0</span><br><span class="line">    :pswitch_1   #case 1</span><br><span class="line">    :pswitch_2   #case 2</span><br><span class="line">    :pswitch_3   #case 3</span><br><span class="line">.end packed-switch</span><br></pre></td></tr></table></figure>
+<p>pswitch_0<del>pswitch_3对应case 0</del>case 3,default分支放在第一个。</p>
+<p>对于有规律递增的switch，结构体如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">struct packed-switch-palyload&#123;</span><br><span class="line">    ushort ident;&#x2F;*值固定0x100*&#x2F;</span><br><span class="line">    ushort size; &#x2F;*case数目*&#x2F;</span><br><span class="line">    int first_key;&#x2F;*初始case的值*&#x2F;</span><br><span class="line">    int[] targets;&#x2F;*每个case相对switch指令处的偏移*&#x2F;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>无规律switch，结构体如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">struct sparse-switch-payload&#123;</span><br><span class="line">    ushort ident;&#x2F;*值固定为0x200*&#x2F;</span><br><span class="line">    ushort size;&#x2F;*case数目*&#x2F;</span><br><span class="line">    int[] keys;&#x2F;*每个case的值，顺序从低到高*&#x2F;</span><br><span class="line">    int[] targets;&#x2F;*每个case相对switch的偏移*&#x2F;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="try-catch语句"><a href="#try-catch语句" class="headerlink" title="try/catch语句"></a>try/catch语句</h3><p>有非常明显的标号:<code>try_start_0</code>以及<code>try_end_0</code> 和<code>.catch</code>。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android/" rel="tag"># Android</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/09/16/Android-re-1/" rel="prev" title="Android逆向分析初步(1)">
+                  <i class="fa fa-chevron-left"></i> Android逆向分析初步(1)
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/01/10/blogReopen/" rel="next" title="关于博客的那些事">
+                  关于博客的那些事 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : '6bdf6f7dadf520f55807e598195037c0',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

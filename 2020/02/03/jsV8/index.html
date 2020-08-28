@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="JavaScirpt引擎将JS代码编译为不同CPU(Intel, ARM以及MIPS等)对应的汇编代码，还负责执行代码、分配内存以及垃圾回收。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Javascript引擎-V8">
+<meta property="og:url" content="http://yoursite.com/2020/02/03/jsV8/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="JavaScirpt引擎将JS代码编译为不同CPU(Intel, ARM以及MIPS等)对应的汇编代码，还负责执行代码、分配内存以及垃圾回收。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/images/Javascript/V8/V8流程图.png">
+<meta property="article:published_time" content="2020-02-03T03:00:46.000Z">
+<meta property="article:modified_time" content="2020-06-21T13:22:24.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="V8">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/images/Javascript/V8/V8流程图.png">
+
+
+<link rel="canonical" href="http://yoursite.com/2020/02/03/jsV8/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Javascript引擎-V8 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#V8"><span class="nav-number">1.</span> <span class="nav-text">V8</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%84"><span class="nav-number">1.1.</span> <span class="nav-text">结构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Ignition%EF%BC%9A%E8%A7%A3%E9%87%8A%E5%99%A8"><span class="nav-number">1.2.</span> <span class="nav-text">Ignition：解释器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TurboFan%EF%BC%9A%E7%BC%96%E8%AF%91%E5%99%A8"><span class="nav-number">1.3.</span> <span class="nav-text">TurboFan：编译器</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/02/03/jsV8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Javascript引擎-V8
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-02-03 11:00:46" itemprop="dateCreated datePublished" datetime="2020-02-03T11:00:46+08:00">2020-02-03</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-06-21 21:22:24" itemprop="dateModified" datetime="2020-06-21T21:22:24+08:00">2020-06-21</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Javascript/" itemprop="url" rel="index"><span itemprop="name">Javascript</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.9k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>4 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>JavaScirpt引擎将JS代码编译为不同CPU(Intel, ARM以及MIPS等)对应的汇编代码，还负责执行代码、分配内存以及垃圾回收。</p>
+<a id="more"></a>
+
+<p>比较著名的javascript引擎：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://v8.dev/">V8</a> (Google)</li>
+<li><a target="_blank" rel="noopener" href="https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey">SpiderMonkey</a> (Mozilla)</li>
+<li><a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/javascriptcore?language=objc">JavaScriptCore</a> (Apple)</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/microsoft/ChakraCore">Chakra</a> (Microsoft)</li>
+<li>IOT：<a target="_blank" rel="noopener" href="https://github.com/svaarala/duktape">duktape</a>、<a target="_blank" rel="noopener" href="https://github.com/jerryscript-project/jerryscript">JerryScript</a></li>
+<li><a target="_blank" rel="noopener" href="https://bellard.org/quickjs/">QuickJS</a>与<a target="_blank" rel="noopener" href="https://hermesengine.dev/">Hermes</a></li>
+</ul>
+<h2 id="V8"><a href="#V8" class="headerlink" title="V8"></a><a target="_blank" rel="noopener" href="https://v8.dev/">V8</a></h2><p>V8是最流行的Javascript引擎，Chrome(市场占有率60%)与Node.js(JS后端编程的事实标准)都使用了V8引擎。</p>
+<p>严格来讲，V8所生成的代码是汇编代码而非机器代码，但是V8相关的文档、博客以及其他资料都把V8生成的代码称作machine code。</p>
+<p>以下是关于V8的粗浅认识，参考自其他博主。</p>
+<h3 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h3><p>V8由许多子模块构成，其中最重要的四个：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://v8.dev/blog/scanner">Parser</a>：负责将JavaScript源码转换为Abstract Syntax Tree (AST)</li>
+<li><a target="_blank" rel="noopener" href="https://v8.dev/docs/ignition">Ignition</a>：interpreter，即解释器，负责将AST转换为Bytecode，解释执行Bytecode；同时收集TurboFan优化编译所需的信息，比如函数参数的类型；</li>
+<li><a target="_blank" rel="noopener" href="https://v8.dev/docs/turbofan">TurboFan</a>：compiler，即编译器，利用Ignitio所收集的类型信息，将Bytecode转换为优化的汇编代码；</li>
+<li><a target="_blank" rel="noopener" href="https://v8.dev/blog/trash-talk">Orinoco</a>：garbage collector，垃圾回收模块，负责将程序不再需要的内存空间回收；</li>
+</ul>
+<img src="/images/Javascript/V8/V8流程图.png" alt="V8流程图" style="zoom:50%;" />
+
+<p>Parser将JS源码转换为AST，然后Ignition将AST转换为Bytecode，最后TurboFan将Bytecode转换为经过优化的Machine Code(实际上是汇编代码)。</p>
+<ul>
+<li>如果函数没有被调用，则V8不会去编译它。</li>
+<li>如果函数只被调用1次，则Ignition将其编译Bytecode就直接解释执行了。TurboFan不会进行优化编译，因为它需要Ignition收集函数执行时的类型信息。这就要求函数至少需要执行1次，TurboFan才有可能进行优化编译。</li>
+<li>如果函数被调用多次，则它有可能会被识别为热点函数，且Ignition收集的类型信息证明可以进行优化编译的话，这时TurboFan则会将Bytecode编译为Optimized Machine Code，以提高代码的执行性能。</li>
+</ul>
+<p>对于JavaScript来说，我们可以直接执行源码(比如：node server.js)，它是在运行的时候先编译再执行，这种方式被称为即时编译(Just-in-time compilation)，简称为JIT。因此，V8也属于JIT编译器。</p>
+<p>以下主要涉及到对解释器和编译器的粗浅认识。</p>
+<h3 id="Ignition：解释器"><a href="#Ignition：解释器" class="headerlink" title="Ignition：解释器"></a>Ignition：解释器</h3><p>example：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">factorial</span>(<span class="params">N</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (N === <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> N * factorial(N - <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">factorial(<span class="number">10</span>);</span><br></pre></td></tr></table></figure>
+
+<p>使用node命令(node版本为12.6.0)的<code>--print-bytecode</code>选项，可以打印出Ignition生成的Bytecode。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">node --print-bytecode factorial.js</span><br></pre></td></tr></table></figure>
+
+<p>控制台输出的内容非常多，最后是factorial函数的Bytecode:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">[generated bytecode for function: factorial]</span><br><span class="line">Parameter count 2</span><br><span class="line">Register count 3</span><br><span class="line">Frame size 24</span><br><span class="line">   18 E&gt; 0x127cbbb5685e @    0 : a5                StackCheck</span><br><span class="line">   27 S&gt; 0x127cbbb5685f @    1 : 0c 01             LdaSmi [1]</span><br><span class="line">   31 E&gt; 0x127cbbb56861 @    3 : 68 02 00          TestEqualStrict a0, [0]</span><br><span class="line">         0x127cbbb56864 @    6 : 99 05             JumpIfFalse [5] (0x127cbbb56869 @ 11)</span><br><span class="line">   46 S&gt; 0x127cbbb56866 @    8 : 0c 01             LdaSmi [1]</span><br><span class="line">   55 S&gt; 0x127cbbb56868 @   10 : a9                Return</span><br><span class="line">   75 S&gt; 0x127cbbb56869 @   11 : 1b 04             LdaImmutableCurrentContextSlot [4]</span><br><span class="line">         0x127cbbb5686b @   13 : 26 fa             Star r1</span><br><span class="line">         0x127cbbb5686d @   15 : 25 02             Ldar a0</span><br><span class="line">   95 E&gt; 0x127cbbb5686f @   17 : 41 01 02          SubSmi [1], [2]</span><br><span class="line">         0x127cbbb56872 @   20 : 26 f9             Star r2</span><br><span class="line">   84 E&gt; 0x127cbbb56874 @   22 : 5d fa f9 03       CallUndefinedReceiver1 r1, r2, [3]</span><br><span class="line">   83 E&gt; 0x127cbbb56878 @   26 : 36 02 01          Mul a0, [1]</span><br><span class="line">   99 S&gt; 0x127cbbb5687b @   29 : a9                Return</span><br><span class="line">Constant pool (size &#x3D; 0)</span><br><span class="line">Handler Table (size &#x3D; 0)</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，Bytecode并不是一般意义上的汇编代码，并没有对应CPU指令集，或者说对应的是一个抽象出来的汇编指令集，这样引入的中间层可以保证V8针对不同的CPU简化编译流程。</p>
+<h3 id="TurboFan：编译器"><a href="#TurboFan：编译器" class="headerlink" title="TurboFan：编译器"></a>TurboFan：编译器</h3><p>TurboFan根据类型信息来简化代码执行流程，它还会进行其他优化，比如减少冗余代码等更复杂的事情。</p>
+<p>使用node命令的<code>--print-code</code>以及<code>--print-opt-code</code>选项，打印出TurboFan生成的汇编代码。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">node --print-code --print-opt-code factorial.js</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">kind &#x3D; REGEXP</span><br><span class="line">name &#x3D; ^([A-Z][a-z]+)+$</span><br><span class="line">compiler &#x3D; unknown</span><br><span class="line">address &#x3D; 0x7fffd74f95e0</span><br><span class="line"></span><br><span class="line">Instructions (size &#x3D; 1263)</span><br><span class="line">0x81451ec2040     0  e983020000     jmp 0x81451ec22c8  &lt;+0x288&gt;</span><br><span class="line">0x81451ec2045     5  4883e904       REX.W subq rcx,0x4</span><br><span class="line">0x81451ec2049     9  c701c0020000   movl [rcx],0x2c0</span><br><span class="line">0x81451ec204f     f  48a1a0040f0300000000 REX.W movq rax,(0x30f04a0)</span><br><span class="line">0x81451ec2059    19  483bc8         REX.W cmpq rcx,rax</span><br><span class="line">0x81451ec205c    1c  0f8705000000   ja 0x81451ec2067  &lt;+0x27&gt;</span><br><span class="line">0x81451ec2062    22  e840040000     call 0x81451ec24a7  &lt;+0x467&gt;</span><br><span class="line">0x81451ec2067    27  488d47ff       REX.W leaq rax,[rdi-0x1]</span><br><span class="line">0x81451ec206b    2b  483b45b8       REX.W cmpq rax,[rbp-0x48]</span><br><span class="line">0x81451ec206f    2f  0f859a030000   jnz 0x81451ec240f  &lt;+0x3cf&gt;</span><br><span class="line">0x81451ec2075    35  48897db0       REX.W movq [rbp-0x50],rdi</span><br><span class="line">0x81451ec2079    39  488b4590       REX.W movq rax,[rbp-0x70]</span><br><span class="line">0x81451ec207d    3d  4883e904       REX.W subq rcx,0x4</span><br><span class="line">0x81451ec2081    41  8901           movl [rcx],rax</span><br><span class="line">0x81451ec2083    43  48c7459000000000 REX.W movq [rbp-0x70],0x0</span><br><span class="line">0x81451ec208b    4b  4883e904       REX.W subq rcx,0x4</span><br><span class="line">0x81451ec208f    4f  c70191020000   movl [rcx],0x291</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>针对不同的CPU，生成的汇编代码也不相同。</p>
+<p>当然，理解TurboFan最重要的是其如何优化所生成的汇编代码。</p>
+<p>以下通过add函数来梳理整个过程。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">add</span>(<span class="params">x, y</span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> x + y;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">add(<span class="number">1</span>, <span class="number">2</span>);</span><br><span class="line">add(<span class="number">3</span>, <span class="number">4</span>);</span><br><span class="line">add(<span class="number">5</span>, <span class="number">6</span>);</span><br><span class="line">add(<span class="string">&quot;7&quot;</span>, <span class="string">&quot;8&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>由于JS的变量是没有类型的，所以add函数的参数可以是任意类型：Number、String、Boolean等，这就意味着add函数可能是数字相加(V8还会区分整数和浮点数)，可能是字符串拼接，也可能是其他更复杂的操作。如果直接编译的话，生成的代码比如会有很多if…else分支去先判断参数类型。</p>
+<p>由于Ignition在执行<code>add(1, 2)</code>时，已经知道add函数的两个参数都是整数，那么TurboFan在编译Bytecode时，就可以假定add函数的参数是整数，这样可以极大地简化生成的汇编代码。</p>
+<p>这样做也是有风险的，因为如果add函数参数不是整数，那么生成的汇编代码也没法执行，只能Deoptimize为Bytecode来执行。</p>
+<p>但如果我们的JS代码中变量的类型变来变去，是会给V8引擎增加不少麻烦的，为了提高性能，我们可以尽量不要去改变变量的类型。</p>
+<p>…</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/V8/" rel="tag"># V8</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/01/19/wifi-crack/" rel="prev" title="CTF流量分析-802.11">
+                  <i class="fa fa-chevron-left"></i> CTF流量分析-802.11
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/02/06/bt-1/" rel="next" title="BitTorrent-(1)文件结构">
+                  BitTorrent-(1)文件结构 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : '712d4a621594c8860387fff38996aca3',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

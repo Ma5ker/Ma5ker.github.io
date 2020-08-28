@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="&amp;emsp;&amp;emsp;python的爬虫技术中的正则表达式部分，主要涉及到re库的使用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PythonDataAnalysis_2--使用re库进行数据操作">
+<meta property="og:url" content="http://yoursite.com/2018/05/07/PythonDataAnalysis-2/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="&amp;emsp;&amp;emsp;python的爬虫技术中的正则表达式部分，主要涉及到re库的使用。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/2/taobao_url.png">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/2/taobao_source.png">
+<meta property="article:published_time" content="2018-05-07T11:09:54.000Z">
+<meta property="article:modified_time" content="2020-01-09T16:46:34.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="Python数据分析">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/2/taobao_url.png">
+
+
+<link rel="canonical" href="http://yoursite.com/2018/05/07/PythonDataAnalysis-2/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>PythonDataAnalysis_2--使用re库进行数据操作 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Python-re%E5%BA%93"><span class="nav-number">1.</span> <span class="nav-text">Python re库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%BA%9B%E6%9C%89%E7%94%A8%E7%9A%84%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">一些有用的正则表达式</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%88%AC%E5%8F%96%E6%B7%98%E5%AE%9D%E7%9A%84%E6%9F%90%E5%95%86%E5%93%81%E9%A1%B5%E9%9D%A2-%E6%AD%A4%E5%A4%84%E9%80%89%E5%8F%96%E5%95%86%E5%93%81%E4%B8%BA%E2%80%9C%E4%B9%A6%E5%8C%85%E2%80%9D"><span class="nav-number">3.</span> <span class="nav-text">爬取淘宝的某商品页面(此处选取商品为“书包”)</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/05/07/PythonDataAnalysis-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PythonDataAnalysis_2--使用re库进行数据操作
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-05-07 19:09:54" itemprop="dateCreated datePublished" datetime="2018-05-07T19:09:54+08:00">2018-05-07</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-01-10 00:46:34" itemprop="dateModified" datetime="2020-01-10T00:46:34+08:00">2020-01-10</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/learn/" itemprop="url" rel="index"><span itemprop="name">learn</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>1.9k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>2 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>&emsp;&emsp;python的爬虫技术中的正则表达式部分，主要涉及到re库的使用。</p>
+<a id="more"></a>
+
+<h2 id="Python-re库"><a href="#Python-re库" class="headerlink" title="Python re库"></a>Python re库</h2><p>python的re库，其中涉及到几个重要的函数：</p>
+<ul>
+<li>re.match函数：re.match 尝试从字符串串的起始位置匹配⼀个模式，如果不是起始位置匹配成功的话，match()就返回none。</li>
+<li>re.search函数：re.search 扫描整个字符串串并返回第一个成功的匹配。</li>
+<li>re.sub⽤用于替换字符串中的匹配项</li>
+<li>re.compile函数：compile函数用于编译正则表达式，生成一个正则表达式对象(pattern)，供search和match函数使用。</li>
+<li>findall函数：在字符串中找到正则表达式所匹配的所有子串，如果没有找到匹配的，则返回空列表。</li>
+<li>re.finditer：和findall类似，不过返回结果是一个迭代器。</li>
+</ul>
+<h2 id="一些有用的正则表达式"><a href="#一些有用的正则表达式" class="headerlink" title="一些有用的正则表达式"></a>一些有用的正则表达式</h2><ul>
+<li><p>email地址(只允许英文字母、数字、下划线、英文句号以及中划线):</p>
+<pre><code>  ^[\w_-]+@[\w_-]+(\.[\w_-]+)+$</code></pre>
+</li>
+<li><p>IPV4地址(IP地址分为4段，每段0-255):</p>
+<pre><code>  ^(0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5])(\.(0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5]))&#123;3&#125;$</code></pre>
+</li>
+</ul>
+<p>后续积累的写在这里…</p>
+<h2 id="爬取淘宝的某商品页面-此处选取商品为“书包”"><a href="#爬取淘宝的某商品页面-此处选取商品为“书包”" class="headerlink" title="爬取淘宝的某商品页面(此处选取商品为“书包”)"></a>爬取淘宝的某商品页面(此处选取商品为“书包”)</h2><p>通过对搜索页面的URL的观察，容易发现，其URL遵循一定的规律，如下:</p>
+<p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/2/taobao_url.png" alt="taobao_url"></p>
+<p>其搜索页面基本URL格式如下：</p>
+<pre><code>https://s.taobao.com/search?q=&#39; + goods&#39;&amp;s=&#39; + str(44 * i)</code></pre>
+<p>其中goods表示商品名称，此处是“书包”，i表示页数</p>
+<p>代码结构如下：</p>
+<pre><code>#利用requests库获取HTML文本：
+def getHTML(url): 
+    try: 
+        r=requests.get(url)
+        r.encoding=r.apparent_encoding
+        return r.text
+    except: 
+        return &quot;&quot;
+#getInfo函数，爬取界面的信息：
+def getInfo(ilt,n,raw_url):
+    goods=&#39;书包&#39;
+    for i in range(n):
+        url=raw_url+goods+&#39;&amp;s=&#39;+str(44*i)
+        html=getHTML(url)
+        plt = re.findall(r&#39;\&quot;view_price\&quot;\:\&quot;[\d\.]*\&quot;&#39;, html)
+        tlt = re.findall(r&#39;\&quot;raw_title\&quot;\:\&quot;.*?\&quot;&#39;, html)
+        for t in range(len(plt)):
+            price = eval(plt[t].split(&#39;:&#39;)[1])
+            title = eval(tlt[t].split(&#39;:&#39;)[1])
+            ilt.append([price, title])
+#其中ilt是最后存放信息的列表，raw_url为基本的地址 &#39;https://s.taobao.com/search?q=&#39;，后面通过商品名称和页数进行补足；函数遍历每个页将需要的信息找出来，以列表形式添加到列表中作为元素。</code></pre>
+<p>查看网页源代码：</p>
+<p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/2/taobao_source.png" alt="taobao_source"></p>
+<p>可以发现 view_price表示的是价格， raw_title对应的是标题，故用正则表达式找出对应的内容填入。</p>
+<pre><code>#格式化打印函数
+def printList(ulist, num):
+    tplt = &quot;&#123;0:^4&#125;\t&#123;1:&#123;3&#125;^8&#125;\t&#123;2:^12&#125;&quot; 
+    print(tplt.format(&quot;序号&quot;, &quot;价格&quot;, &quot;商品名称&quot;, chr(12288))) 
+    tpp = &quot;&#123;0:^4&#125;\t&#123;1:^12&#125;\t&#123;2:^16&#125;&quot; 
+    for i in range(num): 
+        u = ulist[i] 
+        print(tpp.format(i+1, u[0], u[1]))
+#main函数，主要进行变量的初始化和函数调用
+#此处n值决定了后面爬取的页数，n取2表示后面将爬取两页的数据
+def main():
+    ilt=[]
+    n=2
+    raw_url=&#39;https://s.taobao.com/search?q=&#39;
+    getInfo(ilt,n,raw_url)
+printList(ilt,len(ilt))</code></pre>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/" rel="tag"># Python数据分析</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/05/07/PythonDataAnalysis-1/" rel="prev" title="PythonDataAnalysis_1--简单网络爬虫">
+                  <i class="fa fa-chevron-left"></i> PythonDataAnalysis_1--简单网络爬虫
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/05/07/PythonDataAnalysis-3/" rel="next" title="PythonDataAnalysis_3--scrapy框架">
+                  PythonDataAnalysis_3--scrapy框架 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : 'b5549d3afa381b3fea51d593d6e0bd92',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

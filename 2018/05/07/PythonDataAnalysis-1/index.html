@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="&amp;emsp;&amp;emsp;使用python的requests库和BeautifulSoup4去对网页信息进行爬取和解析，获得制定信息；其中涉及Javascript渲染的动态页面，我采用了selenium + PlantomJS的动态网页爬取技术进行了爬取。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PythonDataAnalysis_1--简单网络爬虫">
+<meta property="og:url" content="http://yoursite.com/2018/05/07/PythonDataAnalysis-1/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="&amp;emsp;&amp;emsp;使用python的requests库和BeautifulSoup4去对网页信息进行爬取和解析，获得制定信息；其中涉及Javascript渲染的动态页面，我采用了selenium + PlantomJS的动态网页爬取技术进行了爬取。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-05-07T11:08:31.000Z">
+<meta property="article:modified_time" content="2020-01-09T14:45:36.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="Python数据分析">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://yoursite.com/2018/05/07/PythonDataAnalysis-1/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>PythonDataAnalysis_1--简单网络爬虫 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Requests%E5%BA%93"><span class="nav-number">1.</span> <span class="nav-text">Requests库</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E6%96%B9%E6%B3%95"><span class="nav-number">1.1.</span> <span class="nav-text">安装方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E8%88%AC%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95"><span class="nav-number">1.2.</span> <span class="nav-text">一般使用方法</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#BeautifulSoup%E5%BA%93"><span class="nav-number">2.</span> <span class="nav-text">BeautifulSoup库</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E6%96%B9%E6%B3%95-1"><span class="nav-number">2.1.</span> <span class="nav-text">安装方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E8%88%AC%E4%BD%BF%E7%94%A8"><span class="nav-number">2.2.</span> <span class="nav-text">一般使用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#selenium-%E4%B8%8E-PlantomJS"><span class="nav-number">3.</span> <span class="nav-text">selenium 与 PlantomJS</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E6%96%B9%E6%B3%95-2"><span class="nav-number">3.1.</span> <span class="nav-text">安装方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%80%E8%88%AC%E4%BD%BF%E7%94%A8-1"><span class="nav-number">3.2.</span> <span class="nav-text">一般使用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B1%E2%80%93%E7%88%AC%E5%8F%96%E7%99%BE%E5%BA%A6%E6%90%9C%E7%B4%A2%E9%A3%8E%E4%BA%91%E6%A6%9C%E5%8D%95%E6%95%B0%E6%8D%AE"><span class="nav-number">4.</span> <span class="nav-text">实例1–爬取百度搜索风云榜单数据</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B2%E2%80%93-%E7%88%AC%E5%8F%96%E5%BD%93%E5%BD%93%E5%9B%BE%E4%B9%A6%E6%8E%92%E8%A1%8C%E6%A6%9C"><span class="nav-number">5.</span> <span class="nav-text">实例2– 爬取当当图书排行榜</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E6%96%87"><span class="nav-number">6.</span> <span class="nav-text">后文</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/05/07/PythonDataAnalysis-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PythonDataAnalysis_1--简单网络爬虫
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-05-07 19:08:31" itemprop="dateCreated datePublished" datetime="2018-05-07T19:08:31+08:00">2018-05-07</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-01-09 22:45:36" itemprop="dateModified" datetime="2020-01-09T22:45:36+08:00">2020-01-09</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/learn/" itemprop="url" rel="index"><span itemprop="name">learn</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.4k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>4 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>&emsp;&emsp;使用python的requests库和BeautifulSoup4去对网页信息进行爬取和解析，获得制定信息；其中涉及Javascript渲染的动态页面，我采用了selenium + PlantomJS的动态网页爬取技术进行了爬取。</p>
+<a id="more"></a>
+
+<h2 id="Requests库"><a href="#Requests库" class="headerlink" title="Requests库"></a>Requests库</h2><p>&emsp;&emsp;Requests 是用Python语言编写，基于 urllib，采用 Apache2 Licensed 开源协议的 HTTP 库。</p>
+<h3 id="安装方法"><a href="#安装方法" class="headerlink" title="安装方法"></a>安装方法</h3><pre><code>Pip install requests</code></pre>
+<h3 id="一般使用方法"><a href="#一般使用方法" class="headerlink" title="一般使用方法"></a>一般使用方法</h3><pre><code>import requests
+r = requests.get(&quot;http://www.whu.edu.cn/ &quot;) 
+print(r.status_code) #返回状态码
+print(r.headers) #返回Response消息报头
+print(r.text) #返回响应正文
+print(r.content) #以二进制编码返回响应正文</code></pre>
+<h2 id="BeautifulSoup库"><a href="#BeautifulSoup库" class="headerlink" title="BeautifulSoup库"></a>BeautifulSoup库</h2><p>&emsp;&emsp;BeautifulSoup 是一个可以从HTML或 XML文件中提取数据的Python库.它能够通 过转换器实现文档导航、查找、修改。</p>
+<h3 id="安装方法-1"><a href="#安装方法-1" class="headerlink" title="安装方法"></a>安装方法</h3><pre><code>pip install beautifulsoup4</code></pre>
+<h3 id="一般使用"><a href="#一般使用" class="headerlink" title="一般使用"></a>一般使用</h3><pre><code>import requests 
+r=requests.get(&quot;https://whu.edu.cn/coremail/common/index_cm40.jsp&quot;) 
+demo=r.text
+from bs4 import BeautifulSoup 
+soup=BeautifulSoup(demo,&#39;html.parser&#39;) #html解析器
+print(soup.prettify())</code></pre>
+<h2 id="selenium-与-PlantomJS"><a href="#selenium-与-PlantomJS" class="headerlink" title="selenium 与 PlantomJS"></a>selenium 与 PlantomJS</h2><p>&emsp;&emsp;selenium 是一套完整的web应用程序测试系统，包含了测试的录制（selenium IDE）,编写及运行（Selenium Remote Control）和测试的并行处理（Selenium Grid）。Selenium的核心Selenium Core基于JsUnit，完全由JavaScript编写，因此可以用于任何支持JavaScript的浏览器上，可以模拟真实浏览器，自动化测试工具，支持多种浏览器，爬虫中主要用来解决JavaScript渲染问题。</p>
+<p>&emsp;&emsp;PhantomJS 是一个基于 WebKit（WebKit是一个开源的浏览器引擎，Chrome，Safari就是用的这个浏览器引擎） 的服务器端 JavaScript API，用于无需浏览器的 Web 测试，页面访问自动化，屏幕捕获，网络监控。</p>
+<h3 id="安装方法-2"><a href="#安装方法-2" class="headerlink" title="安装方法"></a>安装方法</h3><p>&emsp;&emsp;由于新的selenium3.x版本不支持PlantomJS了，此处采用2.48.0版本：</p>
+<pre><code>Pip install selenium==2.48.0</code></pre>
+<p>PlantomJS前往plantomJS官网下载exe文件放入python安装目录下的script目录即可。</p>
+<h3 id="一般使用-1"><a href="#一般使用-1" class="headerlink" title="一般使用"></a>一般使用</h3><pre><code>from selenium import webdriver
+url = &#39;http://www.zuihaodaxue.cn/ARWU2016.html&#39;
+ulist=[]
+driver = webdriver.PhantomJS()
+driver.get(url)
+data=driver.page_source</code></pre>
+<p>此时得到的data即为JS渲染后的网页源代码，可以再通过BeautifulSoup进行html解析后续步骤与静态网页爬取一样。</p>
+<h2 id="实例1–爬取百度搜索风云榜单数据"><a href="#实例1–爬取百度搜索风云榜单数据" class="headerlink" title="实例1–爬取百度搜索风云榜单数据"></a>实例1–爬取百度搜索风云榜单数据</h2><p>先给代码：</p>
+<pre><code>import requests
+from bs4 import BeautifulSoup
+import bs4
+def getHTMLText(url): 
+    try: 
+        r=requests.get(url)
+        r.encoding=r.apparent_encoding
+        return r.text
+    except: 
+        return &quot;&quot;
+
+def fillUnivList(ulist, html):
+    soup = BeautifulSoup(html, &quot;html.parser&quot;) 
+    for li in soup.find(&#39;ul&#39;,&#39;list&#39;).children: 
+        if isinstance(li, bs4.element.Tag): 
+            span1=li.find_all(&#39;span&#39;)[0]
+            a=li.find(&#39;a&#39;)
+            if li.find(&#39;span&#39;,&#39;icon-fair&#39;):
+                span2=li.find(&#39;span&#39;,&#39;icon-fair&#39;)
+            if li.find(&#39;span&#39;,&#39;icon-fall&#39;):
+                span2=li.find(&#39;span&#39;,&#39;icon-fall&#39;)
+            if li.find(&#39;span&#39;,&#39;icon-rise&#39;):
+                span2=li.find(&#39;span&#39;,&#39;icon-rise&#39;)
+            ulist.append([span1.string,a.string, span2.string])
+def printUnivList(ulist, num):
+    title = &quot;&#123;0:^24&#125;&quot;
+    print(title.format(&#39;百度实时搜索榜&#39;))
+    tplt = &quot;&#123;0:^4&#125;\t&#123;1:&#123;3&#125;^8&#125;\t&#123;2:^12&#125;&quot; 
+    print(tplt.format(&quot;排名&quot;, &quot;关键词&quot;, &quot;搜索指数&quot;, chr(12288))) 
+    tpp = &quot;&#123;0:^4&#125;\t&#123;1:^12&#125;\t&#123;2:^16&#125;&quot; 
+    for i in range(num): 
+        u = ulist[i] 
+        print(tpp.format(u[0], u[1], u[2]))
+def main(): 
+    ulist = [] 
+    url = &#39;http://top.baidu.com/&#39;
+    html = getHTMLText(url) 
+    fillUnivList(ulist, html)
+    printUnivList(ulist, 10)
+main()</code></pre>
+<p>代码比较简单，其中涉及到四个函数：</p>
+<ul>
+<li>getHTMLText函数获取了网页地址，通过requests的get请求返回网页源码</li>
+<li>fillUnivList函数通过BeautifulSoup解析得到的网页代码以填充ulist，其中，再查看百度实时搜索榜时发现，搜索指数栏网页开发者为了标识出增长情况对span的class作了不同处理，所以对class进行了判断。</li>
+<li>PrintUnivList函数进行格式化输出，顺序扫描ulist中的每一个存入元组进行格式化输出；</li>
+<li>Main函数实现过程的调用</li>
+</ul>
+<h2 id="实例2–-爬取当当图书排行榜"><a href="#实例2–-爬取当当图书排行榜" class="headerlink" title="实例2– 爬取当当图书排行榜"></a>实例2– 爬取当当图书排行榜</h2><p>此处选择的目标网页当当畅销书排行榜，地址：<br><a target="_blank" rel="noopener" href="http://bang.dangdang.com/books/bestsellers/01.00.00.00.00.00-24hours-0-0-1-1">http://bang.dangdang.com/books/bestsellers/01.00.00.00.00.00-24hours-0-0-1-1</a></p>
+<p>&emsp;&emsp;其中用到的代码与前面的没有太大区别，只是针对特定网页做了一些解析上的调整，其中由于网页中图书名处a标签有的图书并未设置非属性内容，故只能将title属性作为书名进行爬取。导致了爬取的图书名出现了过长等情况。</p>
+<pre><code>import requests
+from bs4 import BeautifulSoup
+import bs4
+from selenium import webdriver
+def getHTMLText(url): 
+    &#39;&#39;&#39;
+    获取页面
+    &#39;&#39;&#39;
+    try:
+        driver = webdriver.PhantomJS()
+        driver.get(url)
+        html=driver.page_source
+        return html
+    except: 
+        return &quot;&quot;
+
+def fillUnivList(ulist, html):
+    soup = BeautifulSoup(html, &quot;html.parser&quot;) 
+    for li in soup.find(&#39;ul&#39;,&#39;bang_list clearfix bang_list_mode&#39;).children:
+        if li.find(&#39;div&#39;)!=-1:
+            num=li.find(&#39;div&#39;).string.replace(&quot;.&quot;,&quot;&quot;)
+            name=li.find(&#39;div&#39;,&#39;name&#39;).find(&#39;a&#39;)[&#39;title&#39;]
+            author=li.find(&#39;div&#39;,&#39;publisher_info&#39;).find(&#39;a&#39;).string
+            ulist.append([num,author,name])
+def printUnivList(ulist, number):
+    title = &quot;&#123;0:^24&#125;&quot;
+    print(title.format(&#39;当当图书畅销榜&#39;))
+    tplt = &quot;&#123;0:^4&#125;\t&#123;1:&#123;3&#125;^8&#125;\t&#123;2:^12&#125;&quot; 
+    print(tplt.format(&quot;排名&quot;, &quot;作者&quot;, &quot;书籍名&quot;, chr(12288))) 
+    for i in range(number): 
+        u = ulist[i]
+        print(tplt.format(u[0], u[1], u[2], chr(12288)))
+def main(): 
+    ulist = [] 
+    url = &#39;http://bang.dangdang.com/books/bestsellers/01.00.00.00.00.00-24hours-0-0-1-1&#39;
+    html = getHTMLText(url) 
+    fillUnivList(ulist, html)
+    printUnivList(ulist, 20)
+main()</code></pre>
+<h2 id="后文"><a href="#后文" class="headerlink" title="后文"></a>后文</h2><p>这次主要是python的几个模块的简单使用，不多说。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/" rel="tag"># Python数据分析</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/05/01/xctf/" rel="prev" title="xctf">
+                  <i class="fa fa-chevron-left"></i> xctf
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/05/07/PythonDataAnalysis-2/" rel="next" title="PythonDataAnalysis_2--使用re库进行数据操作">
+                  PythonDataAnalysis_2--使用re库进行数据操作 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : '0bbedebefcb1d1dd4d24a05f9b369c2c',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

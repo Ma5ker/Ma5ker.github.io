@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="由于可能即将转战其他时间紧迫的项目，开始填坑免得刚学的就忘了。本文主要讲解堆的结构，关于堆溢出部分后面再写。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="堆溢出(1)-堆基础">
+<meta property="og:url" content="http://yoursite.com/2020/05/21/heapOverflow1/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="由于可能即将转战其他时间紧迫的项目，开始填坑免得刚学的就忘了。本文主要讲解堆的结构，关于堆溢出部分后面再写。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/images/heap/linux_mem_struct.png">
+<meta property="og:image" content="http://yoursite.com/images/heap/tcache结构.png">
+<meta property="article:published_time" content="2020-05-21T02:47:32.000Z">
+<meta property="article:modified_time" content="2020-06-21T13:19:22.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="pwn">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/images/heap/linux_mem_struct.png">
+
+
+<link rel="canonical" href="http://yoursite.com/2020/05/21/heapOverflow1/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>堆溢出(1)-堆基础 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E5%A0%86"><span class="nav-number">1.</span> <span class="nav-text">什么是堆</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8Eptmalloc2%E7%9A%84%E5%A4%9A%E7%BA%BF%E7%A8%8B"><span class="nav-number">1.1.</span> <span class="nav-text">关于ptmalloc2的多线程</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A0%86%E7%AE%A1%E7%90%86%E7%9B%B8%E5%85%B3%E7%9A%84%E4%B8%BB%E8%A6%81%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">堆管理相关的主要数据结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#chunk"><span class="nav-number">2.1.</span> <span class="nav-text">chunk</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#malloc-state"><span class="nav-number">2.2.</span> <span class="nav-text">malloc_state</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#bins"><span class="nav-number">2.3.</span> <span class="nav-text">bins</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#small-bin"><span class="nav-number">2.3.1.</span> <span class="nav-text">small bin</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#large-bin"><span class="nav-number">2.3.2.</span> <span class="nav-text">large bin</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#unsorted-bin"><span class="nav-number">2.3.3.</span> <span class="nav-text">unsorted bin</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#fastbins"><span class="nav-number">2.4.</span> <span class="nav-text">fastbins</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#top-chunk"><span class="nav-number">2.5.</span> <span class="nav-text">top chunk</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#last-remainder"><span class="nav-number">2.6.</span> <span class="nav-text">last remainder</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#binmap"><span class="nav-number">2.7.</span> <span class="nav-text">binmap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#tcache"><span class="nav-number">2.8.</span> <span class="nav-text">tcache</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/21/heapOverflow1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          堆溢出(1)-堆基础
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-05-21 10:47:32" itemprop="dateCreated datePublished" datetime="2020-05-21T10:47:32+08:00">2020-05-21</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-06-21 21:19:22" itemprop="dateModified" datetime="2020-06-21T21:19:22+08:00">2020-06-21</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>15k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>13 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>由于可能即将转战其他时间紧迫的项目，开始填坑免得刚学的就忘了。本文主要讲解堆的结构，关于堆溢出部分后面再写。</p>
+<a id="more"></a>
+
+<h2 id="什么是堆"><a href="#什么是堆" class="headerlink" title="什么是堆"></a>什么是堆</h2><p>堆是linux程序运行时的重要内存部分。程序运行过程中，堆提供动态分配的内存，允许程序申请大小未知的内存(废话)。</p>
+<p>堆其实就是程序虚拟地址空间的一块连续的线性区域，由低地址向高地址方向增长。一般称管理堆的那部分程序为堆管理器。(又是废话)</p>
+<p>下面是老生常谈的linux内存分布图。</p>
+<img src="/images/heap/linux_mem_struct.png" alt="linux内存结构" style="zoom:50%;" />
+
+<p>目前常见的堆实现主要有下面几个</p>
+<ul>
+<li>dlmalloc<ul>
+<li>通用堆分配器</li>
+</ul>
+</li>
+<li>ptmalloc2<ul>
+<li>libc使用，衍生自dlmalloc，提供多线程支持</li>
+</ul>
+</li>
+<li>jemalloc<ul>
+<li>Android/FireFox等使用</li>
+</ul>
+</li>
+<li>tcmalloc<ul>
+<li>google chrome使用</li>
+</ul>
+</li>
+<li>libumem<ul>
+<li>Solaris使用</li>
+</ul>
+</li>
+<li>Windows 10 - segment heap<ul>
+<li>自不必多言</li>
+</ul>
+</li>
+</ul>
+<p>本文既然是做pwn，研究的自然就是libc使用的ptmalloc2。</p>
+<h3 id="关于ptmalloc2的多线程"><a href="#关于ptmalloc2的多线程" class="headerlink" title="关于ptmalloc2的多线程"></a>关于ptmalloc2的多线程</h3><p>在ptmalloc2中，主线程创建的堆叫<code>main arena</code>，不同线程维护不同的堆，称作<code>per thread arena</code>。</p>
+<p>Arena数量受CPU限制:</p>
+<ul>
+<li>2*核心数 (32bit)  </li>
+<li>8*核心数 (64bit)</li>
+</ul>
+<h2 id="堆管理相关的主要数据结构"><a href="#堆管理相关的主要数据结构" class="headerlink" title="堆管理相关的主要数据结构"></a>堆管理相关的主要数据结构</h2><p>想了解堆，先从管理堆的结构开始。主要有下面几个：</p>
+<ul>
+<li>arena</li>
+<li>malloc_state</li>
+<li>chunks</li>
+<li>bins</li>
+</ul>
+<p>arena不是一个重点，这里不作详细说明。主要关注剩余三个部分。而因为malloc_state算是一个存放所有堆相关信息的结构体，提及这个就得先说清楚堆到底什么样子，所以下面先介绍chunk。</p>
+<h3 id="chunk"><a href="#chunk" class="headerlink" title="chunk"></a>chunk</h3><p>chunk是内存块的结构，其定义位于malloc.c。堆内存就是通过一个个chunk构成的。无论chunk是大是小，总是遵从下面的结构。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">struct malloc_chunk &#123;</span><br><span class="line">  &#x2F;*前一chunk如果是空闲，则表示它的大小，否则被其用来存储数据*&#x2F;</span><br><span class="line">  INTERNAL_SIZE_T      mchunk_prev_size;  &#x2F;* Size of previous chunk (if free).*&#x2F;</span><br><span class="line">  &#x2F;* 当前块的大小 size的对齐为0x10  后三位为AWP标志位 *&#x2F;</span><br><span class="line">  INTERNAL_SIZE_T      mchunk_size;       &#x2F;* Size in bytes, including overhead.*&#x2F;</span><br><span class="line"></span><br><span class="line">  &#x2F;*双向链表*&#x2F;</span><br><span class="line">  struct malloc_chunk* fd;         &#x2F;* double links -- used only if free. 前向指针*&#x2F;</span><br><span class="line">  struct malloc_chunk* bk;        &#x2F;*后向指针*&#x2F;</span><br><span class="line">  &#x2F;*最小的chunk大小必须包含前四个域*&#x2F;</span><br><span class="line">  &#x2F;* Only used for large blocks: pointer to next larger size.  *&#x2F;</span><br><span class="line">  &#x2F;*这两个结构在large block中使用*&#x2F;</span><br><span class="line">  struct malloc_chunk* fd_nextsize; &#x2F;* double links -- used only if free. *&#x2F;</span><br><span class="line">  struct malloc_chunk* bk_nextsize;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>源码中给出了一些更形象的图.</p>
+<p>对于已分配的chunk主要是三个部分，prev_size，size(包括后三位标志位)，user date。因为当一个chunk被分配时，它将会从双链表上拆下，它的fd和bk自然就失去了作用。mem即malloc函数返回给用户的指针。同样的，当这个chunk不在是空闲chunk时，下一个chunnk的prev_size部分自然也没有任何作用，所以也可以被用户使用。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">    chunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">	    |             Size of previous chunk, if unallocated (P clear)  |</span><br><span class="line">	    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">	    |             Size of chunk, in bytes                     |A|M|P|</span><br><span class="line">      mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">	    |             User data starts here...                          .</span><br><span class="line">	    .                                                               .</span><br><span class="line">	    .             (malloc_usable_size() bytes)                      .</span><br><span class="line">	    .                                                               |</span><br><span class="line">nextchunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">	    |             (size of chunk, but used for application data)    |</span><br><span class="line">	    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">	    |             Size of next chunk, in bytes                |A|0|1|</span><br><span class="line">	    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure>
+
+<p>对于一个空闲的chunk，其结构大致如下(其实和已分配的遵循同样的结构；这里并没有展示出fd_nextsize和bk_nextsize部分)，这里的head和foot标记的是chunk的size部分，只是为了方便对chunk的size进行操作，在源码中存在两个宏分别是<code>set_head</code>和<code>set_foot</code>就是指的对这两个位置进行设置。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">    chunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">	    |             Size of previous chunk, if unallocated (P clear)  |</span><br><span class="line">	    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">    &#96;head:&#39; |             Size of chunk, in bytes                     |A|0|P|</span><br><span class="line">      mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">	    |             Forward pointer to next chunk in list             |</span><br><span class="line">	    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">	    |             Back pointer to previous chunk in list            |</span><br><span class="line">	    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">	    |             Unused space (may be 0 bytes long)                .</span><br><span class="line">	    .                                                               .</span><br><span class="line">	    .                                                               |</span><br><span class="line">nextchunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">    &#96;foot:&#39; |             Size of chunk, in bytes                           |</span><br><span class="line">	    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">	    |             Size of next chunk, in bytes                |A|0|0|</span><br><span class="line">	    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure>
+
+<p>size表示的是当前chunk的大小，其中后三位用作标志位，含义如下</p>
+<ul>
+<li>P<ul>
+<li>PREV_INUSE：如果上一个chunk在使用则set(不包括fastbin)</li>
+</ul>
+</li>
+<li>A<ul>
+<li>NON_MAIN_ARENA</li>
+</ul>
+</li>
+<li>M<ul>
+<li>IS_MMAPPED:当前chunk是不是通过mmap得到的</li>
+</ul>
+</li>
+</ul>
+<h3 id="malloc-state"><a href="#malloc-state" class="headerlink" title="malloc_state"></a>malloc_state</h3><p>malloc_state就是内存中用来管理堆的数据结构，源码中表现形式如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;*保存堆状态的结构体malloc_state*&#x2F;</span><br><span class="line">struct malloc_state</span><br><span class="line">&#123;</span><br><span class="line">  &#x2F;* Serialize access.  *&#x2F;</span><br><span class="line">  &#x2F;*该变量用于控制程序串行访问同一个分配区，当一个线程获取了分配区之后，其它线程要想访问该分配区，就必须等待该线程分配完成后才能够使用。*&#x2F;</span><br><span class="line">  __libc_lock_define (, mutex);</span><br><span class="line"></span><br><span class="line">  &#x2F;* Flags (formerly in max_fast).  *&#x2F;</span><br><span class="line">  &#x2F;*flags 记录了分配区的一些标志*&#x2F;</span><br><span class="line">  int flags;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Set if the fastbin chunks contain recently inserted free blocks.  *&#x2F;</span><br><span class="line">  &#x2F;* Note this is a bool but not all targets support atomics on booleans.  *&#x2F;</span><br><span class="line">  int have_fastchunks;&#x2F;*是否存在fastbin*&#x2F;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Fastbins *&#x2F;</span><br><span class="line">  mfastbinptr fastbinsY[NFASTBINS];&#x2F;*记录fastbin*&#x2F;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Base of the topmost chunk -- not otherwise kept in a bin *&#x2F;</span><br><span class="line">  mchunkptr top;&#x2F;*记录top chunk*&#x2F;</span><br><span class="line"></span><br><span class="line">  &#x2F;* The remainder from the most recent split of a small request *&#x2F;</span><br><span class="line">  mchunkptr last_remainder;&#x2F;*分割后剩余部分*&#x2F;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Normal bins packed as described above *&#x2F;</span><br><span class="line">  mchunkptr bins[NBINS * 2 - 2];&#x2F;* unsorted bin small bin large bin *&#x2F;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Bitmap of bins *&#x2F;</span><br><span class="line">  unsigned int binmap[BINMAPSIZE];&#x2F;*标识某个bin是否空的map *&#x2F;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Linked list *&#x2F;</span><br><span class="line">  struct malloc_state *next;&#x2F;*与下一个malloc_state形成双链表*&#x2F;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Linked list for free arenas.  Access to this field is serialized</span><br><span class="line">     by free_list_lock in arena.c.  *&#x2F;</span><br><span class="line">  struct malloc_state *next_free;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Number of threads attached to this arena.  0 if the arena is on</span><br><span class="line">     the free list.  Access to this field is serialized by</span><br><span class="line">     free_list_lock in arena.c.  *&#x2F;</span><br><span class="line">  INTERNAL_SIZE_T attached_threads;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Memory allocated from the system in this arena.  *&#x2F;</span><br><span class="line">  INTERNAL_SIZE_T system_mem;</span><br><span class="line">  INTERNAL_SIZE_T max_system_mem;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>malloc_state中有下面几个关键的域</p>
+<ul>
+<li>have_fastchunks<ul>
+<li>标识了当前是否存在fast chunk</li>
+</ul>
+</li>
+<li>fastbinsY<ul>
+<li>存放了所有fastbin链的数组</li>
+</ul>
+</li>
+<li>top<ul>
+<li>存放了当前top chunk位置</li>
+</ul>
+</li>
+<li>last_remainder<ul>
+<li>指向最后一次分割后的残留部分</li>
+</ul>
+</li>
+<li>bins<ul>
+<li>用来记录管理和组织空闲chunk的链表的数组</li>
+</ul>
+</li>
+<li>binmap<ul>
+<li>记录每个bin是否为空</li>
+</ul>
+</li>
+</ul>
+<p>关于每个域所存放的值的具体意义后面将会分别解释。</p>
+<h3 id="bins"><a href="#bins" class="headerlink" title="bins"></a>bins</h3><p>bins是用来管理和组织空闲内存块的链表结构。ptmalloc2共有127个bin。其中62个small bin，64个large bin以及一个unsorted bin。malloc_state的bins数组存放了所有的bins信息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">#define NBINS             128 &#x2F;*bin的总数  unsorted bin(1)+smallbin(62)+largebin(63)+1 *&#x2F;</span><br><span class="line">malloc_state&#123;</span><br><span class="line">  ...</span><br><span class="line">  &#x2F;* Normal bins packed as described above *&#x2F;</span><br><span class="line">  mchunkptr bins[NBINS * 2 - 2];&#x2F;* unsorted bin small bin large bin *&#x2F;</span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>bins数组中总共有254个bin元素，每一个bin都是双链表之后的，用两个元素存储,其中<code>bin[0]bin[1]</code>保存了unsorted bin链表的头指针.<code>bin[2]</code>和<code>bin[3]</code>合起来指示了一个bin双链表(后面会讲到这就是堆的第一个small bin)，其中<code>bin[2]</code>是头指针，<code>bin[3]</code>是尾指针。</p>
+<p>回想一下chunk的结构，为了方便编程统一处理，可以将这样连续两个bins的元素也当一个chunk，只是这个chunk是一个没有size和prev_size部分，而是只有fd和bk，这样处理起来就会更加方便一点。</p>
+<h4 id="small-bin"><a href="#small-bin" class="headerlink" title="small bin"></a>small bin</h4><p>small bins总共有62组，每组中(或者说每个bin中)的chunk都是相同的大小，组之间以0x10字节作为大小间距(x86系统下为8字节),也就是说每个bin本身是一个先进先出的双向链表。而前面说过bins中从<code>bin[2]</code>开始每一对元素表示一个bin，也就是说small bin在bins中的存放就是从<code>bin[2]bin[3]</code>到<code>bin[124]bin[125]</code>。</p>
+<p>x64系统下，small bin中的chunk大小为小于1024(0x400)，而前面说过，chunk对齐是0x10，所以small chunk范围为<code>[0x20,0x3f0]</code>(x64下smallbin的的范围，x86下small chunk的size要小于512字节)。为什么最小是0x20，通过源码可以明白。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;* The smallest possible chunk *&#x2F;</span><br><span class="line">&#x2F;*定义了最小的chunk，这里可以看到最小的chunk大小为chunk到fd_nextsize偏移</span><br><span class="line"> *所以最小的chunk必须有prev_size size fd bk 四个部分 即0x20</span><br><span class="line"> *&#x2F;</span><br><span class="line">#define MIN_CHUNK_SIZE        (offsetof(struct malloc_chunk, fd_nextsize))</span><br></pre></td></tr></table></figure>
+
+<h4 id="large-bin"><a href="#large-bin" class="headerlink" title="large bin"></a>large bin</h4><p>large bin总共有63组，与small bin不同的是，每个large bin中的bin链并不是都存放着相同大小的chunk(其实这个可以想到，因为chunk变大，这样存放会导致bin的内存开销变大)。每个large bin均是一个先进先出的双向链表，在bins数组中是从<code>bin[126]bin[127]</code>到<code>bin[250]bin[251]</code>(这里其实有个疑惑，bins总共254个元素，看来最后一组<code>bin[252]bin[253]</code>好像并没使用？)。</p>
+<p>前面提到small bin中chunk的最大要小于1024(x64),large bin的最小size其实就是1024，即0x400。large bin每一组组内的间距在源码中给出如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;*</span><br><span class="line">  ...</span><br><span class="line">  32 bins of size      64    0x40</span><br><span class="line">  16 bins of size     512    0x200</span><br><span class="line">  8 bins of size    4096    0x1000</span><br><span class="line">  4 bins of size   32768    0x8000</span><br><span class="line">  2 bins of size  262144    0x40000</span><br><span class="line">  1 bin  of size what&#39;s left</span><br><span class="line">  ...</span><br><span class="line">*&#x2F;</span><br></pre></td></tr></table></figure>
+
+<p>这一段是什么意思呢，也就是说，对前32个large bin 他们的组内间隔最大均为0x40，即第一个largebin<code>bin[126]bin[127]</code>范围就应该是<code>[0x400,0x440]</code>，后面的以此类推。</p>
+<p>largebin链表是存在顺序的，chunk是按照大小从大到小排列，同时这些chunk也会通过其尾部的fd_nextsize和bk_nextsize串起来，此外为了节省操作，如果有相同大小的chunk加入bin中不会进入这个nextsize链，并且这个chunk会被放入largebin已存在相同大小chunk的后面(源码中可以看到chunk放入largebin的过程是一个反向扫描链表的过程)。</p>
+<h4 id="unsorted-bin"><a href="#unsorted-bin" class="headerlink" title="unsorted bin"></a>unsorted bin</h4><p>unsorted bin简言之就是一个垃圾桶，以双向循环链表的形式存在，bins数组以<code>bin[0]bin[1]</code>存放其链表的头。free后的chunk部分会被放入unsorted bin，在malloc时满足一定条件会进行垃圾清理，将其中的chunk进行整理(后面会专门讲malloc与free的流程)。</p>
+<h3 id="fastbins"><a href="#fastbins" class="headerlink" title="fastbins"></a>fastbins</h3><p>fastbins为了速度而产生(后面还有了tcache)，它在设计上和其他的bins是明显不同的，在malloc_state中fastbinsY数组存放的就是每个fastbin链的头指针。</p>
+<ul>
+<li>fastbin中的chunk以单链表的形式构成chunk链</li>
+<li>对每个fastbin的链，其中的chunk大小相同。</li>
+<li>fastbin采用后进先出的(后释放的会被先申请)</li>
+<li>由于是单链表，fastbin的bk指针并无作用，只会用到fd指针</li>
+<li>fastbin中的chunk的prev_inuse一直处于set状态，保证他们不会与相邻的空闲chunk合并</li>
+</ul>
+<p>malloc_state的fastbinsY数组中存放的就是每个fastbin链的头指针。</p>
+<p>下面是glibc源代码中涉及到fastbin的部分内容,为了速度，大量的以宏的形式存在</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;*取malloc_state中对应索引的fastbin头部*&#x2F;</span><br><span class="line">#define fastbin(ar_ptr, idx) ((ar_ptr)-&gt;fastbinsY[idx])</span><br><span class="line"></span><br><span class="line">&#x2F;* offset 2 to use otherwise unindexable first 2 bins *&#x2F;</span><br><span class="line">&#x2F;*这是对fastbin index的计算 malloc会进行fastbin的size检查，进行fastbin attack时需要保证chunk的size合法  得到的index在正确范围*&#x2F;</span><br><span class="line">#define fastbin_index(sz) \</span><br><span class="line">  ((((unsigned int) (sz)) &gt;&gt; (SIZE_SZ &#x3D;&#x3D; 8 ? 4 : 3)) - 2)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#x2F;* The maximum fastbin request size we support *&#x2F;</span><br><span class="line">&#x2F;*支持的最大fastbin大小*&#x2F;</span><br><span class="line">#define MAX_FAST_SIZE     (80 * SIZE_SZ &#x2F; 4)</span><br><span class="line"></span><br><span class="line">&#x2F;*fastbin数量*&#x2F;</span><br><span class="line">#define NFASTBINS  (fastbin_index (request2size (MAX_FAST_SIZE)) + 1)</span><br><span class="line">&#x2F;* 当释放的 chunk 与该 chunk 相邻的空闲 chunk 合并后的大小大于 FASTBIN_CONSOLIDATION_THRESHOLD 时，内存碎片可能比较多了，</span><br><span class="line"> * 就需要把 fast bins 中的 chunk 都进行合并，以减少内存碎片对系统的影响</span><br><span class="line"> *&#x2F;</span><br><span class="line">#define FASTBIN_CONSOLIDATION_THRESHOLD  (65536UL)</span><br></pre></td></tr></table></figure>
+
+<p>默认情况下，在x86系统上，大小为16-64字节，在x64系统中为32-128字节。</p>
+<h3 id="top-chunk"><a href="#top-chunk" class="headerlink" title="top chunk"></a>top chunk</h3><p>对于top chunk，在malloc_state中以top指针存放其地址。top chunk不属于任何的bin，并且位于arena的最高地址处，其中不包含任何的空闲或者分配的chunk。简单的理解方式就是如果arena被分配了10000，前面的chunk用了9000，那么这剩下的1000就属于top chunk。只有当无chunk可分配时，才会去使用top chunk。初始化时使用unsorted chunk作为top chunk。</p>
+<h3 id="last-remainder"><a href="#last-remainder" class="headerlink" title="last remainder"></a>last remainder</h3><p>last remainder是最后一次分割后剩余的部分。在malloc时会去unsorted bin检查last_remainder,如果满足了一定条件，便会将其分裂，并将剩余的部分标记为last_remainder。这个没啥好说的，对于堆溢出来说不太影响。</p>
+<h3 id="binmap"><a href="#binmap" class="headerlink" title="binmap"></a>binmap</h3><p>binmap是记录每个bin(不包括fastbin)是否为空的数据结构，可以快速判断bin的情况。binmap中总共有4个元素，每个元素(就叫做map吧)有32位，每一位标识了一个bin的情况。</p>
+<p>binmap在源码中表现形式如下，源码中还提供了一些宏来计算某个idx的bin的binmap情况。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;*</span><br><span class="line">   Binmap</span><br><span class="line"></span><br><span class="line">    To help compensate for the large number of bins, a one-level index</span><br><span class="line">    structure is used for bin-by-bin searching.  &#96;binmap&#39; is a</span><br><span class="line">    bitvector recording whether bins are definitely empty so they can</span><br><span class="line">    be skipped over during during traversals.  The bits are NOT always</span><br><span class="line">    cleared as soon as bins are empty, but instead only</span><br><span class="line">    when they are noticed to be empty during traversal in malloc.</span><br><span class="line"></span><br><span class="line">    binmap是一个位向量，用于记录bin是否绝对为空，以便在遍历期间可以将其跳过。 </span><br><span class="line">    bin不为空时，并不总是立即清除这些位，而是仅当在malloc中遍历时发现它们为空时才清除</span><br><span class="line"></span><br><span class="line"> *&#x2F;</span><br><span class="line"></span><br><span class="line">&#x2F;* Conservatively use 32 bits per map word, even if on 64bit system *&#x2F;</span><br><span class="line">&#x2F;*每个map设置为32位 可以记录32个bin*&#x2F;</span><br><span class="line">#define BINMAPSHIFT      5</span><br><span class="line">#define BITSPERMAP       (1U &lt;&lt; BINMAPSHIFT)&#x2F;*0x100000  -&gt; 32*&#x2F;</span><br><span class="line">#define BINMAPSIZE       (NBINS &#x2F; BITSPERMAP)&#x2F;*总共需要  bin总数&#x2F;32  这么多个map*&#x2F;</span><br><span class="line">&#x2F;*下面是从binmap中获取某个bin是否为空的相关操作*&#x2F;</span><br><span class="line">#define idx2block(i)     ((i) &gt;&gt; BINMAPSHIFT)</span><br><span class="line">#define idx2bit(i)       ((1U &lt;&lt; ((i) &amp; ((1U &lt;&lt; BINMAPSHIFT) - 1))))</span><br><span class="line"></span><br><span class="line">#define mark_bin(m, i)    ((m)-&gt;binmap[idx2block (i)] |&#x3D; idx2bit (i))</span><br><span class="line">#define unmark_bin(m, i)  ((m)-&gt;binmap[idx2block (i)] &amp;&#x3D; ~(idx2bit (i)))</span><br><span class="line">#define get_binmap(m, i)  ((m)-&gt;binmap[idx2block (i)] &amp; idx2bit (i))</span><br></pre></td></tr></table></figure>
+
+<h3 id="tcache"><a href="#tcache" class="headerlink" title="tcache"></a>tcache</h3><p>tcache是在glibc v2.26(ubuntu 17.10)后引入的新的堆管理结构，通过tcache_put()与tcache_get()从tcache中插入与取出链表。tcache出现以前，fastbin是libc的亲儿子，但tcache出现后其优先级甚至高于fast，并且由此带来了一些malloc和free的改变。</p>
+<p>small bin范围大小内的chunk都会使用tcache，其行为几乎和fastbin类似，每个tcache链上最多只能有七个chunk。在第一次malloc时会malloc一块内存放在堆头，在其中存放tcache的一些结构体。</p>
+<p>tcache主要有两个重要的结构体<code>tcache_entry</code>和<code>tcache_perthread_struct</code>。</p>
+<p><code>tcache_entry</code>是一个单链表结构，跟fastbin很像，也是后进先出单链表，之前的<code>tcache_entry</code>中是只存放指向下一个tcache(或者说chunk的mem)的指针的，后面加入了key域防止double free(free后key会被置为NULL)。而key指向的就是当前线程管理tcache结构体<code>tcache_perthread_struct</code>。</p>
+<p>这里嫖一张<a target="_blank" rel="noopener" href="https://ctf-wiki.github.io/ctf-wiki/pwn/linux/glibc-heap/implementation/tcache-zh/">ctf-wiki</a>的图。</p>
+<img src="/images/heap/tcache结构.png" alt="tcache示意图" style="zoom:50%;" />
+
+
+<p><code>tcache_perthread_struct</code>结构体中维护了两个域<code>entries</code>和<code>counts</code>，<code>entries</code>存放的是所有tcache链的头部，<code>counts</code>是每个tcache链的chunk数量。counts总是不大于7的。tcache链的数量最多有64个。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br></pre></td><td class="code"><pre><span class="line">#if USE_TCACHE</span><br><span class="line">&#x2F;* We want 64 entries.  This is an arbitrary limit, which tunables can reduce.  *&#x2F;</span><br><span class="line"># define TCACHE_MAX_BINS		64&#x2F;*tcache链数量*&#x2F;</span><br><span class="line"># define MAX_TCACHE_SIZE	tidx2usize (TCACHE_MAX_BINS-1)</span><br><span class="line"></span><br><span class="line">&#x2F;* Only used to pre-fill the tunables.  *&#x2F;</span><br><span class="line"># define tidx2usize(idx)	(((size_t) idx) * MALLOC_ALIGNMENT + MINSIZE - SIZE_SZ)</span><br><span class="line"></span><br><span class="line">&#x2F;* When &quot;x&quot; is from chunksize().  *&#x2F;</span><br><span class="line"># define csize2tidx(x) (((x) - MINSIZE + MALLOC_ALIGNMENT - 1) &#x2F; MALLOC_ALIGNMENT)</span><br><span class="line">&#x2F;* When &quot;x&quot; is a user-provided size.  *&#x2F;</span><br><span class="line"># define usize2tidx(x) csize2tidx (request2size (x))</span><br><span class="line"></span><br><span class="line">&#x2F;* With rounding and alignment, the bins are...</span><br><span class="line">   idx 0   bytes 0..24 (64-bit) or 0..12 (32-bit)</span><br><span class="line">   idx 1   bytes 25..40 or 13..20</span><br><span class="line">   idx 2   bytes 41..56 or 21..28</span><br><span class="line">   etc.  *&#x2F;</span><br><span class="line"></span><br><span class="line">&#x2F;* This is another arbitrary limit, which tunables can change.  Each</span><br><span class="line">   tcache bin will hold at most this number of chunks.  *&#x2F;</span><br><span class="line">&#x2F;*每个tcache链上chunk的最大值*&#x2F;</span><br><span class="line"># define TCACHE_FILL_COUNT 7</span><br><span class="line"></span><br><span class="line">&#x2F;* Maximum chunks in tcache bins for tunables.  This value must fit the range</span><br><span class="line">   of tcache-&gt;counts[] entries, else they may overflow.  *&#x2F;</span><br><span class="line"># define MAX_TCACHE_COUNT UINT16_MAX</span><br><span class="line">#endif</span><br><span class="line">...</span><br><span class="line">#if USE_TCACHE</span><br><span class="line"></span><br><span class="line">&#x2F;* We overlay this structure on the user-data portion of a chunk when</span><br><span class="line">   the chunk is stored in the per-thread cache.  *&#x2F;</span><br><span class="line">&#x2F;*tcache entry结构体 用于链接空闲的chunk结构体，其中的next指针指向下一个相同大小的chunk*&#x2F;</span><br><span class="line">typedef struct tcache_entry</span><br><span class="line">&#123;</span><br><span class="line">  struct tcache_entry *next;&#x2F;* next指向的是chunk的user data的开始，而非chunk的开始*&#x2F;</span><br><span class="line">  &#x2F;* This field exists to detect double frees.  *&#x2F;</span><br><span class="line">  &#x2F;*这个域用来检测double free*&#x2F;</span><br><span class="line">  struct tcache_perthread_struct *key;</span><br><span class="line">&#125; tcache_entry;</span><br><span class="line"></span><br><span class="line">&#x2F;* There is one of these for each thread, which contains the</span><br><span class="line">   per-thread cache (hence &quot;tcache_perthread_struct&quot;).  Keeping</span><br><span class="line">   overall size low is mildly important.  Note that COUNTS and ENTRIES</span><br><span class="line">   are redundant (we could have just counted the linked list each</span><br><span class="line">   time), this is for performance reasons.  *&#x2F;</span><br><span class="line">&#x2F;*每个thread维护一个tcache_prethread_struct*&#x2F;</span><br><span class="line">typedef struct tcache_perthread_struct</span><br><span class="line">&#123;</span><br><span class="line">  uint16_t counts[TCACHE_MAX_BINS];&#x2F;&#x2F;计数器 记录tcache_entry链上空闲chunk的数目，每条链上最多有7个chunk</span><br><span class="line">  tcache_entry *entries[TCACHE_MAX_BINS];&#x2F;&#x2F;tcache_entry数组，每个都是以单向链表的方式链接了大小相同的的处于空闲状态或者说free 后的chunk</span><br><span class="line">&#125; tcache_perthread_struct;</span><br><span class="line"></span><br><span class="line">static __thread bool tcache_shutting_down &#x3D; false;</span><br><span class="line">static __thread tcache_perthread_struct *tcache &#x3D; NULL;</span><br><span class="line"></span><br><span class="line">&#x2F;* Caller must ensure that we know tc_idx is valid and there&#39;s room</span><br><span class="line">   for more chunks.  *&#x2F;</span><br><span class="line">&#x2F;*将一个chunk放回tcache中*&#x2F;</span><br><span class="line">static __always_inline void</span><br><span class="line">tcache_put (mchunkptr chunk, size_t tc_idx)</span><br><span class="line">&#123;</span><br><span class="line">  &#x2F;*chunk转为mem指针*&#x2F;</span><br><span class="line">  tcache_entry *e &#x3D; (tcache_entry *) chunk2mem (chunk);</span><br><span class="line"></span><br><span class="line">  &#x2F;* Mark this chunk as &quot;in the tcache&quot; so the test in _int_free will</span><br><span class="line">     detect a double free.  *&#x2F;</span><br><span class="line">  &#x2F;&#x2F;设置放回头部</span><br><span class="line">  e-&gt;key &#x3D; tcache;</span><br><span class="line"></span><br><span class="line">  e-&gt;next &#x3D; tcache-&gt;entries[tc_idx];</span><br><span class="line">  tcache-&gt;entries[tc_idx] &#x3D; e;</span><br><span class="line">  ++(tcache-&gt;counts[tc_idx]);&#x2F;&#x2F;计数器自增</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;* Caller must ensure that we know tc_idx is valid and there&#39;s</span><br><span class="line">   available chunks to remove.  *&#x2F;</span><br><span class="line">&#x2F;*传入index  获取对应tcache链的chunk*&#x2F;</span><br><span class="line">static __always_inline void *</span><br><span class="line">tcache_get (size_t tc_idx)</span><br><span class="line">&#123;</span><br><span class="line">  tcache_entry *e &#x3D; tcache-&gt;entries[tc_idx];&#x2F;&#x2F;得到对应的链表头</span><br><span class="line">  tcache-&gt;entries[tc_idx] &#x3D; e-&gt;next;&#x2F;&#x2F;将第一个tcache拿掉</span><br><span class="line">  --(tcache-&gt;counts[tc_idx]);&#x2F;&#x2F;count减一</span><br><span class="line">  e-&gt;key &#x3D; NULL;&#x2F;&#x2F;拿出的tcache chunk 其key指针从指向tcache_perthreadStruct结构体置为NULL</span><br><span class="line">  return (void *) e;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">static void</span><br><span class="line">tcache_thread_shutdown (void)</span><br><span class="line">&#123;</span><br><span class="line">  int i;</span><br><span class="line">  tcache_perthread_struct *tcache_tmp &#x3D; tcache;</span><br><span class="line"></span><br><span class="line">  if (!tcache)</span><br><span class="line">    return;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Disable the tcache and prevent it from being reinitialized.  *&#x2F;</span><br><span class="line">  tcache &#x3D; NULL;</span><br><span class="line">  tcache_shutting_down &#x3D; true;</span><br><span class="line"></span><br><span class="line">  &#x2F;* Free all of the entries and the tcache itself back to the arena</span><br><span class="line">     heap for coalescing.  *&#x2F;</span><br><span class="line">  for (i &#x3D; 0; i &lt; TCACHE_MAX_BINS; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">      while (tcache_tmp-&gt;entries[i])</span><br><span class="line">	&#123;</span><br><span class="line">	  tcache_entry *e &#x3D; tcache_tmp-&gt;entries[i];</span><br><span class="line">	  tcache_tmp-&gt;entries[i] &#x3D; e-&gt;next;</span><br><span class="line">	  __libc_free (e);</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  __libc_free (tcache_tmp);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>关于堆的结构部分大概就这么多，以后想起什么再补充。下一篇介绍堆的分配和释放，也就是malloc和free的具体过程。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/pwn/" rel="tag"># pwn</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/05/20/docker/" rel="prev" title="关于docker的配置与使用">
+                  <i class="fa fa-chevron-left"></i> 关于docker的配置与使用
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/05/25/heapOverflow2/" rel="next" title="堆溢出(2)-堆内存分配操作流程">
+                  堆溢出(2)-堆内存分配操作流程 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : '19956c086985f80f7a77b91927871f02',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

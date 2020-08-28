@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="&amp;emsp;&amp;emsp;写在前面的话：老师布置任务安装Tpm模拟器，坑了好久，总算给装上了，写篇教程给还未安装好的老哥及健忘的自己。&amp;emsp;&amp;emsp;环境：ubuntu 12.04 32位(vmware workstation pro 12)&amp;emsp;&amp;emsp;PS:由于用到的好多库环境为32位，之前尝试了开启i386架构配置编译环境仍然编译出问题，故放弃了64位ubuntu转而采用32">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ubuntu下Tpm_emulator的安装">
+<meta property="og:url" content="http://yoursite.com/2017/04/22/Tpm-emulator/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="&amp;emsp;&amp;emsp;写在前面的话：老师布置任务安装Tpm模拟器，坑了好久，总算给装上了，写篇教程给还未安装好的老哥及健忘的自己。&amp;emsp;&amp;emsp;环境：ubuntu 12.04 32位(vmware workstation pro 12)&amp;emsp;&amp;emsp;PS:由于用到的好多库环境为32位，之前尝试了开启i386架构配置编译环境仍然编译出问题，故放弃了64位ubuntu转而采用32">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-04-21T17:54:41.000Z">
+<meta property="article:modified_time" content="2020-01-09T14:45:36.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="Tpm_emulator">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://yoursite.com/2017/04/22/Tpm-emulator/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Ubuntu下Tpm_emulator的安装 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E3%80%81%E5%AE%89%E8%A3%85cmake"><span class="nav-number">1.</span> <span class="nav-text">一、安装cmake</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%8C%E3%80%81%E5%AE%89%E8%A3%85m4-%E7%AC%AC%E4%B8%89%E6%AD%A5%E8%A6%81%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">二、安装m4(第三步要用)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E3%80%81%E5%AE%89%E8%A3%85GNU-MPlibrary"><span class="nav-number">3.</span> <span class="nav-text">三、安装GNU MPlibrary</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9B%9B%E3%80%81%E5%AE%89%E8%A3%85GTK"><span class="nav-number">4.</span> <span class="nav-text">四、安装GTK</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%94%E3%80%81%E5%AE%89%E8%A3%85Tpm-emulator"><span class="nav-number">5.</span> <span class="nav-text">五、安装Tpm emulator</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%AD%E3%80%81TSS%E5%8D%8F%E8%AE%AE%E6%A0%88%E5%AE%89%E8%A3%85"><span class="nav-number">6.</span> <span class="nav-text">六、TSS协议栈安装</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%83%E3%80%81TPMmanager%E5%AE%89%E8%A3%85"><span class="nav-number">7.</span> <span class="nav-text">七、TPMmanager安装</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/04/22/Tpm-emulator/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Ubuntu下Tpm_emulator的安装
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017-04-22 01:54:41" itemprop="dateCreated datePublished" datetime="2017-04-22T01:54:41+08:00">2017-04-22</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-01-09 22:45:36" itemprop="dateModified" datetime="2020-01-09T22:45:36+08:00">2020-01-09</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/learn/" itemprop="url" rel="index"><span itemprop="name">learn</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.2k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>3 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>&emsp;&emsp;写在前面的话：老师布置任务安装Tpm模拟器，坑了好久，总算给装上了，写篇教程给还未安装好的老哥及健忘的自己。<br>&emsp;&emsp;环境：ubuntu 12.04 32位(vmware workstation pro 12)<br>&emsp;&emsp;PS:由于用到的好多库环境为32位，之前尝试了开启i386架构配置编译环境仍然编译出问题，故放弃了64位ubuntu转而采用32位系统。</p>
+<a id="more"></a>
+<hr>
+<h4 id="一、安装cmake"><a href="#一、安装cmake" class="headerlink" title="一、安装cmake"></a>一、安装cmake</h4><pre><code>sudo apt-get install cmake</code></pre>
+<h4 id="二、安装m4-第三步要用"><a href="#二、安装m4-第三步要用" class="headerlink" title="二、安装m4(第三步要用)"></a>二、安装m4(第三步要用)</h4><pre><code>sudo apt-get install m4</code></pre>
+<h4 id="三、安装GNU-MPlibrary"><a href="#三、安装GNU-MPlibrary" class="headerlink" title="三、安装GNU MPlibrary"></a>三、安装GNU MPlibrary</h4><p>下载源码：**<a target="_blank" rel="noopener" href="http://gmplib.org/" title="gmplib">点击进入官网</a>**（我下载的是最新版本gmp-6.1.2.tar.bz2）</p>
+<p>解压解包后进入目录gmp-6.1.2<br>安装过程如下：</p>
+<pre><code>tar -jxf gmp-6.1.2.tar.bz2
+cd gmp-6.1.2
+./configure
+make
+make check
+sudo make install</code></pre>
+<h4 id="四、安装GTK"><a href="#四、安装GTK" class="headerlink" title="四、安装GTK"></a>四、安装GTK</h4><pre><code>sudo apt-get install build-essential
+sudo apt-get install gnome-core-devel
+sudo apt-get install pkg-config
+sudo apt-get install devhelp
+sudo apt-get install libglib2.0-doc libgtk2.0-doc
+sudo apt-get install glade libglade2-dev
+sudo apt-get install libgtk2.0*</code></pre>
+<h4 id="五、安装Tpm-emulator"><a href="#五、安装Tpm-emulator" class="headerlink" title="五、安装Tpm emulator"></a>五、安装Tpm emulator</h4><p>下载源码，两个网址任选：**<a target="_blank" rel="noopener" href="https://github.com/PeterHuewe/tpm-emulator/releases" title="Tpm emulator">github</a>** or <strong><a target="_blank" rel="noopener" href="https://sourceforge.net/projects/tpm-emulator.berlios/" title="Tpm emulator">sourceforge</a></strong></p>
+<p>这里选择的版本是tpm_emulator-0.7.4.tar.gz<br>解压后进入目录:</p>
+<pre><code>tar -xzf tpm_emulator-0.7.4.tar.gz
+cd tpm_emulator-0.7.4
+mkdir build
+cd build
+cmake ../
+make
+sudo make install</code></pre>
+<p>安装完成</p>
+<p>初始化</p>
+<pre><code>sudo tpmd deactivated
+sudo killall tpmd
+sudo tpmd clear</code></pre>
+<p>启动软TPM</p>
+<pre><code>sudo modprobe tpmd_dev
+sudo tpmd -f -d</code></pre>
+<p>PS:第一次运行可能有以下情况：</p>
+<blockquote>
+<p>若出现Module tpmd_dev not found，则先运行命令depmod -a<br>若出现failed: address already in use,则运行命令rm /var/run/tpm/tpmd_socket:0<br>若成功，则会不断出现tpmd.c:310: Debug: waiting for connections…</p>
+</blockquote>
+<h4 id="六、TSS协议栈安装"><a href="#六、TSS协议栈安装" class="headerlink" title="六、TSS协议栈安装"></a>六、TSS协议栈安装</h4><p>下载trousers及tpm-tools：**<a target="_blank" rel="noopener" href="http://sourceforge.net/project/showfiles.php?group_id=126012" title="源码地址">点击进入下载页面</a>**</p>
+<p>实际只安装了tpm-tools-1.3.8.tar.gz和trousers-0.3.8.tar.gz两个包</p>
+<pre><code>    这两个包版本并非最新，但教程以此为范本，以防后面配置出错，故仍套用这两个版本，有时间再折腾。</code></pre>
+<p><strong>安装trousers-0.3.8.tar.gz</strong></p>
+<p>解压解包不再详述，完成后进入文件夹<br>注意：先查看库地址</p>
+<pre><code>whereis libtddl.so</code></pre>
+<p>此处此系统显示为：</p>
+<pre><code>libtddl: /usr/lib/libtddl.a /usr/local/lib/libtddl.so /usr/local/lib/libtddl.a</code></pre>
+<p>故后面加红色代码处为/usr/lib/lib/libtddl.so，否则根据情况更改。<br>1、编译前，首先对其中的几个文件进行修改<br>修改./src/tcsd/Makefile.am第4行</p>
+<pre><code>tcsd_LDADD=$&#123;top_builddir&#125;/src/tcs/libtcs.a$&#123;top_builddir&#125;/src/tcs/libtddl.a -lpthread @CRYPTOLIB@</code></pre>
+<p>为：</p>
+<blockquote>
+<p>tcsd_LDADD=${top_builddir}/src/tcs/libtcs.a<font color="red">/usr/local/lib/libtddl.so</font> -lpthread @CRYPTOLIB@</p>
+</blockquote>
+<p>修改./src/tcsd/Makefile.in第55， 56行：</p>
+<pre><code>tcsd_DEPENDENCIES =$&#123;top_builddir&#125;/src/tcs/libtcs.a \
+    $&#123;top_builddir&#125;/src/tcs/libtddl.so</code></pre>
+<p>为：</p>
+<pre><code>tcsd_DEPENDENCIES =$&#123;top_builddir&#125;/src/tcs/libtcs.a \
+    /usr/local/lib/libtddl.so</code></pre>
+<p>修改后进行编译安装<br>直接执行./configure而后make会由于将警告当作错误而出现一些错误信息，简单的解决办法是执行：</p>
+<pre><code>env CFLAGS=&quot;-Wno-unused-but-set-variable&quot; ./configure</code></pre>
+<p>接着安装的老套路：</p>
+<pre><code>make
+sudo make install</code></pre>
+<p>安装完成后启动TCSD（在启动TCSD之前，必须先启动tpm-emulator（参考第五步），否则会提示找不到设备）</p>
+<pre><code>sudo tcsd -e -f</code></pre>
+<p>可能会出现下面报错信息：</p>
+<pre><code>TCSD TCS ERROR: TCS GetCapability failed with result = 0x1c</code></pre>
+<p>这是由于上次启动TPM没有正常退出，并且这次以默认的SAVE方式启动，进而自检不通过造成的，只需执行:</p>
+<pre><code>sudo tpmd -f -d clear</code></pre>
+<p>之后再次执行：</p>
+<pre><code>sudo tcsd -e -f</code></pre>
+<p><strong>安装tpm-tools-1.3.8.tar.gz</strong></p>
+<p>解压解包后进入目录</p>
+<pre><code>./configure
+make
+sudo make install</code></pre>
+<p>检测是否成功安装：进入tpm-tools-1.3.8/src/tpm_mgmt/目录下查看以下三个信息：</p>
+<pre><code>./tpm_version                 #查看版本号
+./tpm_getpubek                #查看ek公钥</code></pre>
+<p><strong>注意:</strong><br>如果./tpm_version 出现tpm_version: error while loading sharedlibraries: libtspi.so.1: cannot open shared object file: No suchfile or directory，  则执行命令：</p>
+<pre><code>sudo apt-get installlibtspi-dev</code></pre>
+<p>若出现Tspi_Context_Connect failed: 0x00003011 - layer=tsp,code=0011 (17), Communication failure，则开启tpmd和tcsd</p>
+<p>另外，<br>在tpm_emulator-0.7.4/tddl文件夹下有测试事例：</p>
+<blockquote>
+<p>../tpm_emulator-0.7.4/tddl# gcc -o test_tddl test_tddl.c -ltddl//-ltddl 为链接tddl的动态链接库</p>
+<p>../tpm_emulator-0.7.4/tddl#LD_LIBRARY_PATH=/usr/local/lib ./test_tddl//运行结果</p>
+</blockquote>
+<p>因为$PATH中没有路径/usr/local/lib，因此，需要加上LD_LIBRARY_PATH=/usr/local/lib，不然会报错<br>目前并未尝试</p>
+<h4 id="七、TPMmanager安装"><a href="#七、TPMmanager安装" class="headerlink" title="七、TPMmanager安装"></a>七、TPMmanager安装</h4><p>tpmmanager可装可不装，主要是它提供QT界面可以直观查看和管理TPM。<br>需要QT支持，需要安装qt4-qmake和libqt4-dev库</p>
+<pre><code>sudo apt-get install qt4-make
+sudo apt-get install libqt4-dev</code></pre>
+<p>源码下载地址：<a target="_blank" rel="noopener" href="https://codeload.github.com/Rohde-Schwarz-Cybersecurity/TPMManager/zip/v0.8.1" title="tpmmanager-v0.8.1">点击下载</a></p>
+<p>解压后：</p>
+<pre><code>cd tpmmanager-0.8.1
+qmake-v
+make
+sudo install bin/tpmmanager /usr/local/bin
+tpmmanager            #运行tpmmanager，注意必须先启动tpm模拟器</code></pre>
+<p><em>至此，所有安装完成</em><br><em>具体怎么去使用，再研究。</em></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Tpm-emulator/" rel="tag"># Tpm_emulator</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/04/17/SELinux1/" rel="prev" title="Study of SELinux-(1) SELinux简介">
+                  <i class="fa fa-chevron-left"></i> Study of SELinux-(1) SELinux简介
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/04/26/cloudmusic/" rel="next" title="Kali linux下安装网易云音乐">
+                  Kali linux下安装网易云音乐 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : '0190d04338c7e84edd2226d618b42f02',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

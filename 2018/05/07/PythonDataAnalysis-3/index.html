@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="&amp;emsp;&amp;emsp;Scrapy是一个python开发的快速高层次的屏幕抓取和web抓取框架，用于抓取web站点并从页面中提取结构化的数据。广泛用于数据挖掘、监测和自动化测试。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PythonDataAnalysis_3--scrapy框架">
+<meta property="og:url" content="http://yoursite.com/2018/05/07/PythonDataAnalysis-3/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="&amp;emsp;&amp;emsp;Scrapy是一个python开发的快速高层次的屏幕抓取和web抓取框架，用于抓取web站点并从页面中提取结构化的数据。广泛用于数据挖掘、监测和自动化测试。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/item.png">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/user-agent.png">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/top.png">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/parse.png">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/parse_next.png">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/next.png">
+<meta property="og:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/result.png">
+<meta property="article:published_time" content="2018-05-07T11:52:27.000Z">
+<meta property="article:modified_time" content="2020-01-09T16:49:34.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="Python数据分析">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/item.png">
+
+
+<link rel="canonical" href="http://yoursite.com/2018/05/07/PythonDataAnalysis-3/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>PythonDataAnalysis_3--scrapy框架 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Scrapy-%E6%A1%86%E6%9E%B6%E7%BB%93%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">Scrapy 框架结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E6%B5%81-Data-flow"><span class="nav-number">2.</span> <span class="nav-text">数据流(Data flow)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E4%BE%8B%E2%80%93%E7%88%AC%E5%8F%96%E8%B1%86%E7%93%A3%E7%94%B5%E5%BD%B1top250"><span class="nav-number">3.</span> <span class="nav-text">实例–爬取豆瓣电影top250</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A6%96%E5%85%88%E7%94%A8scrapy%E7%94%9F%E6%88%90%E5%B7%A5%E7%A8%8B%E6%96%87%E4%BB%B6"><span class="nav-number">3.1.</span> <span class="nav-text">首先用scrapy生成工程文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B9%E6%8D%AEbasic%E6%A8%A1%E6%9D%BF%E7%94%9F%E6%88%90%E7%88%AC%E8%99%AB"><span class="nav-number">3.2.</span> <span class="nav-text">根据basic模板生成爬虫</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%94%B9%E5%86%99items-py%E6%96%87%E4%BB%B6"><span class="nav-number">3.3.</span> <span class="nav-text">改写items.py文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#spider%E6%94%B9%E5%86%99"><span class="nav-number">3.4.</span> <span class="nav-text">spider改写</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#settings-py%E8%AE%BE%E7%BD%AE"><span class="nav-number">3.5.</span> <span class="nav-text">settings.py设置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C"><span class="nav-number">3.6.</span> <span class="nav-text">运行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%99%84spider%E9%83%A8%E5%88%86%E5%AE%8C%E6%95%B4%E4%BB%A3%E7%A0%81"><span class="nav-number">3.7.</span> <span class="nav-text">附spider部分完整代码</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/05/07/PythonDataAnalysis-3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          PythonDataAnalysis_3--scrapy框架
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-05-07 19:52:27" itemprop="dateCreated datePublished" datetime="2018-05-07T19:52:27+08:00">2018-05-07</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-01-10 00:49:34" itemprop="dateModified" datetime="2020-01-10T00:49:34+08:00">2020-01-10</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/learn/" itemprop="url" rel="index"><span itemprop="name">learn</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>3 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>&emsp;&emsp;Scrapy是一个python开发的快速高层次的屏幕抓取和web抓取框架，用于抓取web站点并从页面中提取结构化的数据。广泛用于数据挖掘、监测和自动化测试。</p>
+<a id="more"></a>
+
+<h2 id="Scrapy-框架结构"><a href="#Scrapy-框架结构" class="headerlink" title="Scrapy 框架结构"></a>Scrapy 框架结构</h2><ul>
+<li>引擎：用来处理整个系统的数据流，触发事务；</li>
+<li>调度器：调度器从引擎接受request并将他们入队，以便之后引擎请求他们时提供给引擎；</li>
+<li>下载器(Downloader)：下载器负责获取页面数据并提供给引擎，而后提供给spider；</li>
+<li>爬虫(Spiders)：Spider是Scrapy用户编写用于分析response并提取item(即获取到的item)或额外跟进的URL的类。 每个spider负责处理一个特定(或一些)网站；</li>
+<li>Item Pipeline： Item Pipeline负责处理被spider提取出来的item。典型的处理有清理、 验证及持久化(例如存取到数据库中)；</li>
+<li>下载器中间件(Downloader middlewares)：下载器中间件是在引擎及下载器之间的特定钩子(specific hook)，处理Downloader传递给引擎的response。 其提供了一个简便的机制，通过插入自定义代码来扩展Scrapy功能；</li>
+<li>Spider中间件(Spider middlewares)： Spider中间件是在引擎及Spider之间的特定钩子(specific hook)，处理spider的输入(response)和输出(items及requests)。 其提供了一个简便的机制，通过插入自定义代码来扩展Scrapy功能；</li>
+</ul>
+<h2 id="数据流-Data-flow"><a href="#数据流-Data-flow" class="headerlink" title="数据流(Data flow)"></a>数据流(Data flow)</h2><ul>
+<li>引擎打开一个网站(open a domain)，找到处理该网站的Spider并向该spider请求第一个要爬取的URL(s)。</li>
+<li>引擎从Spider中获取到第一个要爬取的URL并在调度器(Scheduler)以Request调度。</li>
+<li>引擎向调度器请求下一个要爬取的URL。</li>
+<li>调度器返回下一个要爬取的URL给引擎，引擎将URL通过下载中间件(请求(request)方向)转发给下载器(Downloader)。</li>
+<li>一旦页面下载完毕，下载器生成一个该页面的Response，并将其通过下载中间件(返回(response)方向)发送给引擎。</li>
+<li>引擎从下载器中接收到Response并通过Spider中间件(输入方向)发送给Spider处理。</li>
+<li>Spider处理Response并返回爬取到的Item及(跟进的)新的Request给引擎。</li>
+<li>引擎将(Spider返回的)爬取到的Item给Item Pipeline，将(Spider返回的)Request给调度器。</li>
+<li>(从第二步)重复直到调度器中没有更多地request，引擎关闭该网站。</li>
+</ul>
+<h2 id="实例–爬取豆瓣电影top250"><a href="#实例–爬取豆瓣电影top250" class="headerlink" title="实例–爬取豆瓣电影top250"></a>实例–爬取豆瓣电影top250</h2><h3 id="首先用scrapy生成工程文件"><a href="#首先用scrapy生成工程文件" class="headerlink" title="首先用scrapy生成工程文件"></a>首先用scrapy生成工程文件</h3><pre><code>scrapy startproject DoubanMovie</code></pre>
+<p>文件夹结构如下：</p>
+<pre><code>scrapy.cfg: 项目的配置文件。
+DoubanMovie /: 该项目的python模块。之后您将在此加入代码。
+DoubanMovie /items.py: 项目中的item文件。
+DoubanMovie /pipelines.py: 项目中的pipelines文件。
+DoubanMovie /settings.py: 项目的设置文件。
+DoubanMovie /spiders/: 放置spider代码的目录</code></pre>
+<h3 id="根据basic模板生成爬虫"><a href="#根据basic模板生成爬虫" class="headerlink" title="根据basic模板生成爬虫"></a>根据basic模板生成爬虫</h3><pre><code>scrapy genspider  Doubanmovietop250  movie.douban.com</code></pre>
+<h3 id="改写items-py文件"><a href="#改写items-py文件" class="headerlink" title="改写items.py文件"></a>改写items.py文件</h3><p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/item.png" alt="item"></p>
+<h3 id="spider改写"><a href="#spider改写" class="headerlink" title="spider改写"></a>spider改写</h3><p>为了防止爬虫检测，先将请求头进行改写，加入user-agent信息，生成新的头部：</p>
+<p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/user-agent.png" alt="user-agent"></p>
+<p>在parse中加入对response的解析代码.</p>
+<p>分析豆瓣电影榜的结构，可以看到，其存放榜单的结构如下：</p>
+<p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/top.png" alt="榜单结构"></p>
+<p>找到每个li对应的xpath进行解析后存入items:</p>
+<p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/parse.png"></p>
+<p>对应后面的页面，查找到下一页网址在源代码中的位置：</p>
+<p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/parse_next.png"></p>
+<p>用xpath解析出来进行下一次的循环爬取:</p>
+<p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/next.png"></p>
+<h3 id="settings-py设置"><a href="#settings-py设置" class="headerlink" title="settings.py设置"></a>settings.py设置</h3><pre><code>ROBOTSTXT_OBEY = True 是否遵守robots.txt
+CONCURRENT_REQUESTS = 16 开启线程数量，默认16
+AUTOTHROTTLE_START_DELAY = 3 开始下载时限速并延迟时间
+AUTOTHROTTLE_MAX_DELAY = 60 高并发请求时最大延迟时间
+HTTPCACHE_ENABLED = True
+HTTPCACHE_EXPIRATION_SECS = 0
+HTTPCACHE_DIR = &#39;httpcache&#39;
+HTTPCACHE_IGNORE_HTTP_CODES = []
+HTTPCACHE_STORAGE = &#39;scrapy.extensions.httpcache.FilesystemCacheStorage&#39;</code></pre>
+<p>以上几个参数对本地缓存进行配置，如果开启本地缓存会优先读取本地缓存，从而加快爬取速度.</p>
+<h3 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h3><pre><code>scrapy crawl douban_movie_top250 -o douban.csv </code></pre>
+<p>这里-o表示输出到文件，后接文件名，scrapy会根据文件后缀选择相应格式，这里为csv。</p>
+<p>爬取结果：</p>
+<p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/result.png" alt="result"></p>
+<h3 id="附spider部分完整代码"><a href="#附spider部分完整代码" class="headerlink" title="附spider部分完整代码"></a>附spider部分完整代码</h3><pre><code># -*- coding: utf-8 -*-
+import scrapy
+from scrapy import Request
+from scrapy.spiders import Spider
+from DoubanMovie.items import DoubanmovieItem
+
+class Doubanmovietop250Spider(scrapy.Spider):
+    name = &#39;douban_movie_top250&#39;
+    allowed_domains = [&#39;movie.douban.com&#39;]
+    #start_urls = [&#39;https://movie.douban.com/top250&#39;]
+    headers = &#123;
+        &#39;User-Agent&#39;: &#39;Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36&#39;,
+    &#125;
+    def start_requests(self):
+        url = &#39;https://movie.douban.com/top250&#39;
+        yield Request(url, headers=self.headers)
+
+    def parse(self, response):
+        item = DoubanmovieItem()
+        movies = response.xpath(&#39;//ol[@class=&quot;grid_view&quot;]/li&#39;)
+        for movie in movies:
+            item[&#39;ranking&#39;] = movie.xpath(&#39;.//div[@class=&quot;pic&quot;]/em/text()&#39;).extract()[0]
+            item[&#39;movie_name&#39;] = movie.xpath(&#39;.//div[@class=&quot;hd&quot;]/a/span[1]/text()&#39;).extract()[0]
+            item[&#39;score&#39;] = movie.xpath(&#39;.//div[@class=&quot;star&quot;]/span[@class=&quot;rating_num&quot;]/text()&#39;).extract()[0]
+            item[&#39;score_num&#39;] = movie.xpath(&#39;.//div[@class=&quot;star&quot;]/span/text()&#39;).re(r&#39;(\d+)人评价&#39;)[0]
+            yield item
+        next_url = response.xpath(&#39;//span[@class=&quot;next&quot;]/a/@href&#39;).extract()
+        if next_url:
+            next_url = &#39;https://movie.douban.com/top250&#39; + next_url[0]
+            yield Request(next_url, headers=self.headers)</code></pre>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/" rel="tag"># Python数据分析</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/05/07/PythonDataAnalysis-2/" rel="prev" title="PythonDataAnalysis_2--使用re库进行数据操作">
+                  <i class="fa fa-chevron-left"></i> PythonDataAnalysis_2--使用re库进行数据操作
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/05/07/PythonDataAnalysis-4/" rel="next" title="PythonDataAnalysis_4--中文分词和文本向量化">
+                  PythonDataAnalysis_4--中文分词和文本向量化 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : 'cb33bc0be826909ff275f3ae933da6b4',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

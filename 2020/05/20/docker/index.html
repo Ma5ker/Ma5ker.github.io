@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="这篇博客记录下关于docker的配置使用的东西以及自己写的脚本和用法，免得日后需要用的时候忘了。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="关于docker的配置与使用">
+<meta property="og:url" content="http://yoursite.com/2020/05/20/docker/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="这篇博客记录下关于docker的配置使用的东西以及自己写的脚本和用法，免得日后需要用的时候忘了。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-20T12:20:02.000Z">
+<meta property="article:modified_time" content="2020-06-21T13:22:48.000Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="docker">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://yoursite.com/2020/05/20/docker/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>关于docker的配置与使用 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#docker%E5%AE%89%E8%A3%85"><span class="nav-number">1.</span> <span class="nav-text">docker安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#docker%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="nav-number">2.</span> <span class="nav-text">docker常用命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E4%BA%8Epwndocker"><span class="nav-number">2.1.</span> <span class="nav-text">关于pwndocker</span></a></li></ol></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">37</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">23</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/05/20/docker/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          关于docker的配置与使用
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-05-20 20:20:02" itemprop="dateCreated datePublished" datetime="2020-05-20T20:20:02+08:00">2020-05-20</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-06-21 21:22:48" itemprop="dateModified" datetime="2020-06-21T21:22:48+08:00">2020-06-21</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>4 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>这篇博客记录下关于docker的配置使用的东西以及自己写的脚本和用法，免得日后需要用的时候忘了。</p>
+<a id="more"></a>
+
+<p>之前一直以为docker这玩意儿只能在物理机上使用，还因为Windows下Hyper-v和Vmware不兼容的问题搞得我一度很蛋疼，前两周听公开课发现原来这玩意儿可以直接用在虚拟机里，特别是linux下，不用啥复杂的配置，还快的一比，于是小小的操作了一下。</p>
+<h2 id="docker安装"><a href="#docker安装" class="headerlink" title="docker安装"></a>docker安装</h2><p>这边我使用的linux版本是Ubuntu 20.04 LTS，安装过程记录如下(基本来自各大博客)。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">#卸载旧版本，这步对于以前安装过的需要。</span><br><span class="line">sudo apt-get remove docker docker-engine docker.io containerd runc</span><br><span class="line">#更新包索引</span><br><span class="line">sudo apt-get update</span><br><span class="line">#安装依赖</span><br><span class="line">sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common</span><br><span class="line">#添加 Docker 的官方 GPG 密钥</span><br><span class="line">curl -fsSL https:&#x2F;&#x2F;download.docker.com&#x2F;linux&#x2F;ubuntu&#x2F;gpg | sudo apt-key add -</span><br><span class="line">#指纹 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88 通过搜索指纹的后8个字符，验证是否拥有带有指纹的密钥</span><br><span class="line">sudo apt-key fingerprint 0EBFCD88</span><br><span class="line">#用18.04的库 我安装的时候好像还没20.04</span><br><span class="line">sudo add-apt-repository &quot;deb [arch&#x3D;amd64] https:&#x2F;&#x2F;download.docker.com&#x2F;linux&#x2F;ubuntu bionic stable&quot;</span><br><span class="line">#更新包索引</span><br><span class="line">sudo apt-get update</span><br><span class="line">#安装docker及相关组件</span><br><span class="line">sudo apt-get install docker-ce docker-ce-cli containerd.io</span><br><span class="line">#测试hello-world</span><br><span class="line">sudo docker run hello-world</span><br><span class="line">#给普通用户运行docker权限</span><br><span class="line">sudo usermod -aG docker [用户名]</span><br><span class="line">#重启</span><br><span class="line">reboot </span><br></pre></td></tr></table></figure>
+
+<h2 id="docker常用命令"><a href="#docker常用命令" class="headerlink" title="docker常用命令"></a>docker常用命令</h2><p>下面记录常用的docker命令，其中<code>ma5ker/pwndocker</code>是我修改的<code>skysider/pwndocker</code>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">#拉取docker image</span><br><span class="line">docker pull ma5ker&#x2F;pwndocker</span><br><span class="line">#当前已有的image</span><br><span class="line">docker images</span><br><span class="line">docker image ls -a</span><br><span class="line">#当前存在的容器</span><br><span class="line">docker container ls -a</span><br><span class="line">创建一个container</span><br><span class="line">docker run -it ma5ker&#x2F;pwndocker &#x2F;bin&#x2F;bash</span><br><span class="line">#开启一个container</span><br><span class="line">docker container start [containerID | containerName] </span><br><span class="line">#停止一个container</span><br><span class="line">docker container stop [containerID | containerName] </span><br><span class="line">#attach到正在运行的docker 不过目前attach用exec代替</span><br><span class="line">docker container attach [containerID | containerName] </span><br><span class="line"></span><br><span class="line">#用container创建新image  连接dockerhub 可以push上去</span><br><span class="line">docker commit [containerID | containerName] ma5ker&#x2F;pwndocker</span><br><span class="line"></span><br><span class="line">#我下面脚本需要的两条命令  创建一个指定image的docker 并设置卷挂载等</span><br><span class="line">docker run \                            # 固有</span><br><span class="line">    -d \                                # 设置后台运行</span><br><span class="line">    --rm \                              # 设置位如果这个container停止就将其删除  这样就不用每次手动删除了</span><br><span class="line">    -h hostname  \                      # container的主机名</span><br><span class="line">    --name cname \                      # container 名字</span><br><span class="line">    -v path&#x2F;cname:&#x2F;ctf&#x2F;work \           # 将path挂载到cname:&#x2F;ctf&#x2F;work</span><br><span class="line">    -p hostPort:containerPort           # 将主机的端口映射到docker</span><br><span class="line">    --cap-add&#x3D;SYS_PTRACE \              # 启用ptrace，没有这个设置 gdb无法调试</span><br><span class="line">    skysider&#x2F;pwndocker                  #创建docker使用的image</span><br><span class="line">#创建完使用docker exec打开一个终端</span><br><span class="line">docker exec -it [containerID | containerName] &#x2F;bin&#x2F;bash</span><br></pre></td></tr></table></figure>
+
+<h3 id="关于pwndocker"><a href="#关于pwndocker" class="headerlink" title="关于pwndocker"></a>关于pwndocker</h3><p>pwndocker是指的<code>skysider/pwndocker</code>，作者在里面预装了很多pwn需要用到的工具。但是因为里面没有vim的配置与LibSearcher(一个ctf需要用到的判断libc版本的库)，我自己对他进行了后期加工，然后形成的<code>ma5ker/pwndocker</code>，然后因为上面命令记不住，我就写了个<a target="_blank" rel="noopener" href="https://github.com/Ma5ker/EasyInstall/blob/master/pwnDocker">python脚本</a>辅助使用，具体脚本如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;env python3</span><br><span class="line">import argparse</span><br><span class="line">import os</span><br><span class="line">import sys</span><br><span class="line">parser &#x3D; argparse.ArgumentParser()</span><br><span class="line"></span><br><span class="line">def parseInit():</span><br><span class="line">    parser.add_argument(&quot;-hn&quot;,&quot;--hostname&quot;, help&#x3D;&quot;the hostname of docker&quot;, default&#x3D;None)</span><br><span class="line">    parser.add_argument(&quot;-n&quot;,&quot;--name&quot;, help&#x3D;&quot;the name of docker container&quot;, default&#x3D;None)</span><br><span class="line">    parser.add_argument(&quot;-p&quot;,&quot;--port&quot;, help&#x3D;&quot;the port of docker binding to host&quot;, default&#x3D;0,type&#x3D;int)</span><br><span class="line">    parser.add_argument(&quot;-f&quot;,&quot;--folder&quot;,help&#x3D;&quot;the file folder mounted to docker&quot;, default&#x3D;None)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">def main():</span><br><span class="line">    parseInit()</span><br><span class="line">    args &#x3D; parser.parse_args()</span><br><span class="line">    if len(sys.argv)&#x3D;&#x3D; 1:</span><br><span class="line">        print(&quot;Use --help or -h to get help.&quot;)</span><br><span class="line">        exit()</span><br><span class="line">    hostname &#x3D; args.hostname</span><br><span class="line">    dockername &#x3D; args.name</span><br><span class="line">    port &#x3D; args.port</span><br><span class="line">    folder &#x3D; args.folder</span><br><span class="line"></span><br><span class="line">    cmd &#x3D; &quot;docker run -d --rm&quot;</span><br><span class="line">    if hostname!&#x3D;None:</span><br><span class="line">        cmd +&#x3D; &quot; -h &quot;+hostname</span><br><span class="line">    else:</span><br><span class="line">        print(&quot;[-]No hostname,will not add it&quot;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    if dockername!&#x3D; None:</span><br><span class="line">        cmd +&#x3D; &quot; --name &quot;+dockername</span><br><span class="line">    else:</span><br><span class="line">        print(&quot;[-]Container name is needed to exec it or you have to attach to it manually.&quot;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    if port!&#x3D;0:</span><br><span class="line">        cmd +&#x3D; &quot; -p &quot;+str(port)+&quot;:&quot;+str(port)</span><br><span class="line">    else:</span><br><span class="line">        print(&quot;[-]No port given,will not bind to any port.&quot;)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    if folder!&#x3D;None:</span><br><span class="line">        if  os.path.isdir(folder):</span><br><span class="line">            cmd +&#x3D; &quot; -v &quot;+os.path.realpath(folder)+&quot;:&#x2F;ctf&#x2F;work&quot;</span><br><span class="line">        else:</span><br><span class="line">            print(&quot;[-]File path error,will not copy it into container&quot;)</span><br><span class="line">    else:</span><br><span class="line">        print(&quot;[-]File path error,will not copy it&quot;)</span><br><span class="line"></span><br><span class="line">    cmd +&#x3D; &quot; --cap-add&#x3D;SYS_PTRACE ma5ker&#x2F;pwndocker&quot;</span><br><span class="line">    print(cmd)</span><br><span class="line">    retcode &#x3D; os.system(cmd)</span><br><span class="line">    retcode &#x3D; retcode &gt;&gt; 8</span><br><span class="line">    if retcode!&#x3D;0:</span><br><span class="line">        print(&quot;[-]Creating container error.&quot;)</span><br><span class="line">        exit()</span><br><span class="line">    print(&quot;[+]Creating container success&quot;)</span><br><span class="line">    cmd &#x3D; &quot;docker exec -it &quot;+dockername+&quot; &#x2F;bin&#x2F;bash&quot;</span><br><span class="line">    print(cmd)</span><br><span class="line">    os.system(cmd)</span><br><span class="line"></span><br><span class="line">if __name__&#x3D;&#x3D;&quot;__main__&quot;:</span><br><span class="line">    main()</span><br><span class="line"></span><br><span class="line">#docker run -d --rm -h $&#123;ctf_name&#125; --name $&#123;ctf_name&#125; -v $(pwd)&#x2F;$&#123;ctf_name&#125;:&#x2F;ctf&#x2F;work -p 23946:23946 --cap-add&#x3D;SYS_PTRACE skysider&#x2F;pwndocker</span><br><span class="line">#docker exec -it $&#123;ctf_name&#125; &#x2F;bin&#x2F;bash</span><br></pre></td></tr></table></figure>
+
+<p>大概就是这些，以后遇到其他的再补充。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/docker/" rel="tag"># docker</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/05/14/csu/" rel="prev" title="关于ROP利用之__lib_csu_init的一些问题">
+                  <i class="fa fa-chevron-left"></i> 关于ROP利用之__lib_csu_init的一些问题
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/05/21/heapOverflow1/" rel="next" title="堆溢出(1)-堆基础">
+                  堆溢出(1)-堆基础 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">243k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">3:41</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      id          : 'd84b69b0c94a804b83520dafd9587685',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>

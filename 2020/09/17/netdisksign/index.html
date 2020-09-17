@@ -22,21 +22,21 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
   </script>
 
-  <meta name="description" content="&amp;emsp;&amp;emsp;关于这次xctf的，实在是打了一会超级酱油，不得不吐槽，pwn题找不到洞在哪儿，web完全无从下手，杂项忘得一干二净，唯一觉得可以做的一题密码题还是时间太长放弃了。全程就是围观众位大佬一题一题又一题。先挖个坑，等题目前部复盘完了来写一下整个writeup，">
+  <meta name="description" content="由于项目需要，对国内与国外的某网盘APP进行了研究，此篇用作记录。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="xctf">
-<meta property="og:url" content="http://yoursite.com/2018/05/01/xctf/index.html">
+<meta property="og:title" content="关于某网盘APK的去签名方法">
+<meta property="og:url" content="http://yoursite.com/2020/09/17/netdisksign/index.html">
 <meta property="og:site_name" content="sec4fun">
-<meta property="og:description" content="&amp;emsp;&amp;emsp;关于这次xctf的，实在是打了一会超级酱油，不得不吐槽，pwn题找不到洞在哪儿，web完全无从下手，杂项忘得一干二净，唯一觉得可以做的一题密码题还是时间太长放弃了。全程就是围观众位大佬一题一题又一题。先挖个坑，等题目前部复盘完了来写一下整个writeup，">
+<meta property="og:description" content="由于项目需要，对国内与国外的某网盘APP进行了研究，此篇用作记录。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2018-04-30T16:04:32.000Z">
-<meta property="article:modified_time" content="2020-01-09T16:54:12.000Z">
+<meta property="article:published_time" content="2020-09-17T14:43:08.000Z">
+<meta property="article:modified_time" content="2020-09-17T15:10:22.765Z">
 <meta property="article:author" content="ma5ker">
-<meta property="article:tag" content="xctf">
+<meta property="article:tag" content="Android">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="http://yoursite.com/2018/05/01/xctf/">
+<link rel="canonical" href="http://yoursite.com/2020/09/17/netdisksign/">
 
 
 <script class="page-configurations">
@@ -49,7 +49,7 @@
   };
 </script>
 
-  <title>xctf | sec4fun</title>
+  <title>关于某网盘APK的去签名方法 | sec4fun</title>
   
 
 
@@ -174,7 +174,7 @@
 
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -186,6 +186,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#MT%E5%A4%A7%E6%B3%95%E5%A5%BD"><span class="nav-number">1.</span> <span class="nav-text">MT大法好</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%8B%E5%8A%A8%E5%88%86%E6%9E%90%E8%AE%B0%E5%BD%95"><span class="nav-number">2.</span> <span class="nav-text">手动分析记录</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AE%80%E5%8D%95%E5%B0%9D%E8%AF%95"><span class="nav-number">2.1.</span> <span class="nav-text">简单尝试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MT%E7%9A%84activity%E8%AE%B0%E5%BD%95%E6%8C%BA%E5%A5%BD%E7%94%A8"><span class="nav-number">2.2.</span> <span class="nav-text">MT的activity记录挺好用</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B3%A8%E5%85%A5%E4%BB%A3%E7%A0%81"><span class="nav-number">3.</span> <span class="nav-text">注入代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E7%BB%AD"><span class="nav-number">4.</span> <span class="nav-text">后续</span></a></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -258,7 +259,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/05/01/xctf/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/09/17/netdisksign/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/head.jpg">
@@ -274,7 +275,7 @@
     
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          xctf
+          关于某网盘APK的去签名方法
         </h1>
 
         <div class="post-meta-container">
@@ -284,24 +285,9 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
+      
 
-      <time title="创建时间：2018-05-01 00:04:32" itemprop="dateCreated datePublished" datetime="2018-05-01T00:04:32+08:00">2018-05-01</time>
-    </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-01-10 00:54:12" itemprop="dateModified" datetime="2020-01-10T00:54:12+08:00">2020-01-10</time>
-      </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-folder"></i>
-      </span>
-      <span class="post-meta-item-text">分类于</span>
-        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-          <a href="/categories/CTF/" itemprop="url" rel="index"><span itemprop="name">CTF</span></a>
-        </span>
+      <time title="创建时间：2020-09-17 22:43:08 / 修改时间：23:10:22" itemprop="dateCreated datePublished" datetime="2020-09-17T22:43:08+08:00">2020-09-17</time>
     </span>
 
   
@@ -312,14 +298,14 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>140</span>
+      <span>3k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
         <i class="far fa-clock"></i>
       </span>
       <span class="post-meta-item-text">阅读时长 &asymp;</span>
-      <span>1 分钟</span>
+      <span>3 分钟</span>
     </span>
 </div>
 
@@ -330,10 +316,122 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p>&emsp;&emsp;关于这次xctf的，实在是打了一会超级酱油，不得不吐槽，pwn题找不到洞在哪儿，web完全无从下手，杂项忘得一干二净，唯一觉得可以做的一题密码题还是时间太长放弃了。全程就是围观众位大佬一题一题又一题。先挖个坑，等题目前部复盘完了来写一下整个writeup，</p>
+        <p>由于项目需要，对国内与国外的某网盘APP进行了研究，此篇用作记录。</p>
 <a id="more"></a>
 
-<hr>
+<p>由于上一次进行项目已经时隔两年，APP已经进行了n次的版本迭代了，最近突然提到结项的事情，再次调查发现国内这位升级了两个大版本。国外的更坑，版本号增加了快1倍，晕了。拿到后直接apktool竟然崩溃了(作者认为是windows字符集问题)，不过测试了下发现旧版APK就能完成目标，总算有点安慰。</p>
+<p>国内的这位整个安全信息页面算是全重做了，伴随着我的项目估计是也得重做了。而且新的要求是得做成一键式的，所以有一些需要GUI的操作或者计算机与手机配合操作的过程算是完蛋了，需要寻求可以脚本实现的新方案。这周一个耗时点就是国内那位的自校验(盗版认证)绕过。</p>
+<p>下面主要是一些当时做的时候的记录。</p>
+<h2 id="MT大法好"><a href="#MT大法好" class="headerlink" title="MT大法好"></a>MT大法好</h2><p>MT管理器的一键式操作如果能给出源代码学习下就好了，虽然不太现实，但是还是要说句：bin，永远滴神。MT操作流程如下：</p>
+<ul>
+<li>将apk使用apktool重打包</li>
+<li>使用signapk签名</li>
+<li>将原APK的META-INF中的.RSA或者整个文件夹拖入安装包</li>
+<li>MT管理器去除校验</li>
+<li>可以成功绕过百度网盘的自校验(盗版验证)</li>
+<li>反编译后发现使用的是ApksignaturekillerPlus，未开源</li>
+</ul>
+<p>这个的原理后面会专门的进行梳理分析。大致就是从.RSA中读取出了签名信息，劫持(将自己放入Application的attachBaseContext中)PM的getPackageinfo，替换其返回值为原来APK的签名信息，从而绕过校验。</p>
+<h2 id="手动分析记录"><a href="#手动分析记录" class="headerlink" title="手动分析记录"></a>手动分析记录</h2><p>(哭了，换了一天时间，分析的一团糟，还失败了)</p>
+<ul>
+<li>通过弹窗提示，定位到两个字符串变量名<ul>
+<li>app_check_title   -&gt;对应弹窗标题，非官方正版</li>
+<li>app_download_url  -&gt;对应弹窗正文，正版下载网址</li>
+</ul>
+</li>
+<li>通过这两个变量名定位到了两个弹窗<ul>
+<li>smali_classes5/com/baidu/netdisk/ui/manager/___.smali 中的X函数</li>
+<li>smali_classes5/com/baidu/netdisk/ui/launch/AuthenticatorActivity.smali 中的popupAlertDialog函数</li>
+<li>smali_classes5/com/baidu/netdisk/ui/open/AuthenticatorActivity.smali 中的popupAlertDialog函数</li>
+</ul>
+</li>
+<li>上述三者均通过Dialog按钮绑定(setOnDismissListener)去调用killMyself终结APP进程</li>
+</ul>
+<h3 id="简单尝试"><a href="#简单尝试" class="headerlink" title="简单尝试"></a>简单尝试</h3><p>注定失败的尝试。</p>
+<ul>
+<li>简单注释掉AlertDialog的按钮监听<ul>
+<li>通过注释执行对比，判断哪个针对的是APK刚安装场景，哪个是针对的安装后再次打开场景<ul>
+<li>注释smali_classes5/com/baidu/netdisk/ui/manager/___.smali 中的X函数中dialog的show调用<ul>
+<li>现象：出现盗版提示后闪退，说明无效</li>
+</ul>
+</li>
+<li>注释smali_classes5/com/baidu/netdisk/ui/manager/___.smali 中的X函数中dialog的按钮监听<ul>
+<li>现象：apk安装后弹出盗版提示，点击确认后可正常登入，但文件部分出现网络异常，无法操作；杀掉后台后再次登入也出现盗版提示，点击确认后卡死在空白封面</li>
+</ul>
+</li>
+<li>到这里手动修改dialog绕过弹窗的方式基本判死刑了。</li>
+</ul>
+</li>
+<li>下面需要根据这个smali_classes5/com/baidu/netdisk/ui/manager/___.smali 中的X函数调用去寻找校验代码。<ul>
+<li>就是搜索代码Lcom/baidu/netdisk/ui/manager/___;-&gt;X</li>
+<li>找到了全文总共四处<ul>
+<li>smali_classes4/com/baidu/netdisk/ui/Navigate$1.smali中的aA(I)V</li>
+<li>smali_classes4/com/baidu/netdisk/ui/ReceivePushFileActivity$1.smali中的aA(I)V</li>
+<li>smali_classes4/com/baidu/netdisk/ui/ReceiveShareFileActivity$2.smali中的aA(I)V</li>
+<li>smali_classes5/com/baidu/netdisk/ui/manager/___.smali 中的注解部分</li>
+<li>smali_classes5/com/baidu/netdisk/ui/searchbox/plugin/SearchboxGroundActivity$3.smali中的aA(I)V</li>
+<li>修改Navigate$1.smali中的aA(I)V跳转，绕过弹窗：出现闪退</li>
+</ul>
+</li>
+<li>根据上述现象，应该有一个机制，弹窗只是外在表现，内部有机制。</li>
+<li>通过崩溃日志找到了可能跟证书有关的函数smali_classes12/com/baidu/bdcvf/CertVerifier.smali isValid()<ul>
+<li>直接修改其返回值，测试：闪退。</li>
+</ul>
+</li>
+<li>放弃手动，尝试寻找命令行工具</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="MT的activity记录挺好用"><a href="#MT的activity记录挺好用" class="headerlink" title="MT的activity记录挺好用"></a>MT的activity记录挺好用</h3><p>利用activity记录对比正常执行和我自己改的crash掉的执行，diff了一下。</p>
+<ul>
+<li>通过activity记录定位签名比对位置<ul>
+<li>安装盗版APK<ul>
+<li>安装完第一次启动时activity记录为<ul>
+<li>com.baidu.netdisk.ui.Navigate</li>
+</ul>
+</li>
+<li>之后启动时，activity记录<ul>
+<li>com.baidu.netdisk.ui.DefaultMainActivity</li>
+<li>com.baidu.netdisk.ui.Navigate</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>mt绕过签名的apk <ul>
+<li>第一次启动时记录<ul>
+<li>com.baidu.netdisk.ui.Navigate</li>
+<li>com.baidu.netdisk.ui.account.LoginRegisterActivity</li>
+<li>点击登录</li>
+<li>com.baidu.sapi2.activity.LoginActivity</li>
+<li>com.baidu.netdisk.ui.NewQuickSettingsActivity</li>
+<li>com.baidu.netdisk.ui.MainActivity</li>
+</ul>
+</li>
+<li>之后登录时记录为<ul>
+<li>com.baidu.netdisk.ui.DefaultMainActivity</li>
+<li>com.baidu.netdisk.ui.Navigate</li>
+<li>com.baidu.netdisk.ui.MainActivity</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>是不是在com.baidu.netdisk.ui.Navigate中呢<ul>
+<li>好吧，失败了。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>后续分析发现其通过加载libbdcvf.so库实现签名输出，具体校验代码定位未知。放弃直接定位修改签名校验代码。</li>
+</ul>
+<h2 id="注入代码"><a href="#注入代码" class="headerlink" title="注入代码"></a>注入代码</h2><p>参考github方案sigkill。</p>
+<ul>
+<li>先获取原版APK的signature(作者通过安装一个apk调用PM去获取，其实可以直接读取解析apk中的*.RSA文件来得到)</li>
+<li>向Application.attachBaseContext()中注入hook PakageManager的smali代码，替换其pakageinfo.signature的返回值为原版APK的值，以绕过比对，</li>
+<li>将smali代码重新打包后签名安装，成功实现绕过效果，文件等也可正常使用。</li>
+</ul>
+<h2 id="后续"><a href="#后续" class="headerlink" title="后续"></a>后续</h2><p>后面得学习sigkill的hook部分代码。优化代码，简化操作(一键化)。先搞定项目要紧。</p>
 
     </div>
 
@@ -343,21 +441,18 @@
 
     <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/xctf/" rel="tag"># xctf</a>
+              <a href="/tags/Android/" rel="tag"># Android</a>
           </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2018/05/01/%E9%9A%90%E5%86%99/" rel="prev" title="隐写">
-                  <i class="fa fa-chevron-left"></i> 隐写
+                <a href="/2020/07/22/wsl2-path/" rel="prev" title="Remove Windows10 PATH from WSL PATH">
+                  <i class="fa fa-chevron-left"></i> Remove Windows10 PATH from WSL PATH
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2018/05/07/PythonDataAnalysis-1/" rel="next" title="PythonDataAnalysis_1--简单网络爬虫">
-                  PythonDataAnalysis_1--简单网络爬虫 <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
     </footer>
@@ -475,7 +570,7 @@ NexT.utils.loadComments('#gitalk-container', () => {
       repo        : 'blog-comments',
       owner       : 'Ma5ker',
       admin       : ['Ma5ker'],
-      id          : '76b013dc6bceb318aeced55dda43bd9b',
+      id          : 'b717a762e4a6aa0abf5a5634e5a47872',
         language: '',
       distractionFreeMode: true
     });

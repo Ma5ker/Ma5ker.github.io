@@ -279,10 +279,16 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
-      
 
-      <time title="创建时间：2020-10-02 17:07:10 / 修改时间：19:18:47" itemprop="dateCreated datePublished" datetime="2020-10-02T17:07:10+08:00">2020-10-02</time>
+      <time title="创建时间：2020-10-02 17:07:10" itemprop="dateCreated datePublished" datetime="2020-10-02T17:07:10+08:00">2020-10-02</time>
     </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新于</span>
+        <time title="修改时间：2020-10-12 11:18:45" itemprop="dateModified" datetime="2020-10-12T11:18:45+08:00">2020-10-12</time>
+      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
@@ -320,27 +326,14 @@
     
     <div class="post-body" itemprop="articleBody">
           <p>关于fiddlerscript暂时没在官方找到一个正常的文档，只知道是基于jscript .net的，并且在论坛看到一些使用例子。这里对目前知道的一些东西做一个整理。</p>
-<h2 id="关于fiddlerscript"><a href="#关于fiddlerscript" class="headerlink" title="关于fiddlerscript"></a>关于fiddlerscript</h2><p>打开fiddlerscript后右边点击可以看到当前的fiddlerscript，这个团队给其做了一个小型编辑器，实际是位于<code>C:\Users\username\Documents\Fiddler2\Scripts</code>文件夹下的<code>CustomRules.js</code>文件。</p>
-<p>整个fiddlerscript位于一个Handles类中，fiddler在运行时会解析执行这个类中的回调函数，这些回调函数类似于在一个请求回复过程中的各个阶段做了hook，以此实现对请求与响应包在各个阶段时的修改，类似于chrome插件中通过<code>addListener</code>在各个阶段进行插桩处理。具体的不同阶段可以在上方Go to栏查看，总共大概有9个，其中比较常用的就是<code>onBeforeRequest</code>和<code>onBeforeResponse</code>两个，分别是在发送请求前和将响应包交给网页前。一般通过在<code>onBeforeRequest</code>中加入代码对请求参数进行处理，在<code>onBeforeResponse</code>中加入代码处理相应参数。</p>
-<h2 id="相关语法与代码"><a href="#相关语法与代码" class="headerlink" title="相关语法与代码"></a>相关语法与代码</h2><p>fiddlerscript的语法基本和javascript差不太多，但是由于没有给出各种API的文档，无从知晓各种信息的类型与处理函数，这里也只是记录一下我遇到的，并且在网上查到的一些函数用法，仅供参考。</p>
-<p><strong>对某个url的请求下断点或做标记</strong></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(oSession.uriContains(<span class="string">&quot;example.com&quot;</span>))&#123;</span><br><span class="line">    oSession.oFlags[<span class="string">&#x27;x-breakrequest&#x27;</span>] = <span class="string">&quot;xyz&quot;</span>;<span class="comment">//这里xyz可以是任意字符串，只是这个断点的名字而已</span></span><br><span class="line">    oSession[<span class="string">&quot;ui-color&quot;</span>]= <span class="string">&quot;red&quot;</span>;</span><br><span class="line">    FiddlerApplication.Log.LogString(<span class="string">&quot;log info&quot;</span>);<span class="comment">//打印日志</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>以字符串方式获取请求的内容,以及一些处理操作</strong></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> obody = oSession.GetRequestBodyString();</span><br><span class="line"><span class="keyword">var</span> arr = obody.split(<span class="string">&quot;=&quot;</span>);</span><br><span class="line">arr[<span class="number">1</span>] = <span class="string">&quot;zzzz&quot;</span>;</span><br><span class="line">obody = arr.join(<span class="string">&quot;=&quot;</span>);</span><br><span class="line">oSession.utilSetRequestBody(obody);</span><br></pre></td></tr></table></figure>
-
-<p><strong>获取响应内容并修改等</strong></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> obody = System.Text.Encoding.UTF8.GetString(oSession.responseBodyBytes);<span class="comment">//获取响应内容</span></span><br><span class="line"><span class="comment">//modify  response</span></span><br><span class="line">oSession.utilSetRequestBody(obody);</span><br></pre></td></tr></table></figure>
-
-<p><strong>请求头信息处理</strong></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> cookie_str = oSession.oRequest.headers[<span class="string">&quot;cookie&quot;</span>];</span><br><span class="line">oSession.oRequest.headers.Remove(<span class="string">&quot;xxxx&quot;</span>);<span class="comment">//移除header的xxxx字段</span></span><br><span class="line">oSession.oRequest.headers.Add(<span class="string">&quot;xxxx&quot;</span>,<span class="string">&quot;yyyy&quot;</span>);<span class="comment">//给请求头添加xxxx字段，这个只是单纯的添加，添加多个相同字段在header中也会出现多个</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>处理json格式响应</strong></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> obody = System.Text.Encoding.UTF8.GetString(oSession.responseBodyBytes);</span><br><span class="line"><span class="keyword">var</span> jsn = Fiddler.WebFormats.JSON.JsonDecode(obody);</span><br><span class="line"><span class="comment">//通过jsn.JSONObject使用此json对象</span></span><br><span class="line"><span class="keyword">var</span> len = jsn.JSONObject.Count();<span class="comment">//元素个数</span></span><br><span class="line">jsn.JSONObject.Remove(jsn.JSONObject[key]);<span class="comment">//删除某个元素</span></span><br><span class="line"><span class="keyword">var</span> new_body = Fiddler.WebFormats.JSON.JsonEncode(jsn.JSONObject);<span class="comment">//编码形成新的json</span></span><br><span class="line">oSession.utilSetResponseBody(new_body);<span class="comment">//构造新的响应包</span></span><br></pre></td></tr></table></figure>
-
-<p><strong>构建新请求并发送</strong></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//主要是请求头部分</span></span><br><span class="line"><span class="comment">//如一个POST https://example.com/a/b的请求</span></span><br><span class="line"><span class="keyword">var</span> url = <span class="string">&quot;/a/b&quot;</span></span><br><span class="line"><span class="keyword">var</span> xxx_str = <span class="string">&quot;xxxx: yyyy&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> ttt_str = <span class="string">&quot;ttt: ppp&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> head_key:<span class="built_in">String</span>[] = [xxx_str,ttt_str];<span class="comment">//设置头部字段</span></span><br><span class="line"><span class="keyword">var</span> new_head = <span class="keyword">new</span> HTTPRequestHeaders(url,head_key);<span class="comment">//构建头部结构体</span></span><br><span class="line">new_head.UriScheme = <span class="string">&quot;https&quot;</span>;</span><br><span class="line">new_head.HTTPMethod = <span class="string">&quot;POST&quot;</span>;</span><br><span class="line">new_head.HTTPVERSION = <span class="string">&quot;HTTP/1.1&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> osd = <span class="keyword">new</span> System.Collections.Specialized.StringDictionary();</span><br><span class="line"><span class="keyword">var</span> new_session = FiddlerApplication.oProxy.SendRequestAndWait(new_head,new_body,osd,<span class="literal">null</span>);<span class="comment">//发送请求</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/10/02/fiddlerscript/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 

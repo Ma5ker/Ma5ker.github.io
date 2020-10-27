@@ -22,22 +22,21 @@
     var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
   </script>
 
-  <meta name="description" content="记录WSL2上PATH包含了Windows10的PATH变量解决办法。需要修改&#x2F;etc&#x2F;wsl.conf文件，在其中加入一些内容，具体如下： 123456789$ sudo vi &#x2F;etc&#x2F;wsl.conf[interop]appendWindowsPath &#x3D; false$ exitc:\Users\user&gt; wslconfig &#x2F;t Ubuntuc:\Users\user&gt; ws">
+  <meta name="description" content="关于Macbook pro 2020 开启HiDPI的方式。参考自Scaled Resolutions.">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Remove Windows10 PATH from WSL PATH">
-<meta property="og:url" content="http://yoursite.com/2020/07/22/wsl2-path/index.html">
+<meta property="og:title" content="Macbook pro 2020 开启HiDPI连接2K显示器">
+<meta property="og:url" content="http://yoursite.com/2020/10/27/mbpHiDPI/index.html">
 <meta property="og:site_name" content="sec4fun">
-<meta property="og:description" content="记录WSL2上PATH包含了Windows10的PATH变量解决办法。需要修改&#x2F;etc&#x2F;wsl.conf文件，在其中加入一些内容，具体如下： 123456789$ sudo vi &#x2F;etc&#x2F;wsl.conf[interop]appendWindowsPath &#x3D; false$ exitc:\Users\user&gt; wslconfig &#x2F;t Ubuntuc:\Users\user&gt; ws">
+<meta property="og:description" content="关于Macbook pro 2020 开启HiDPI的方式。参考自Scaled Resolutions.">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2020-07-22T09:39:48.000Z">
-<meta property="article:modified_time" content="2020-10-13T07:15:35.756Z">
+<meta property="article:published_time" content="2020-10-27T02:30:35.000Z">
+<meta property="article:modified_time" content="2020-10-27T03:03:30.014Z">
 <meta property="article:author" content="ma5ker">
-<meta property="article:tag" content="WSL2">
-<meta property="article:tag" content="Windows 10">
+<meta property="article:tag" content="macbook">
 <meta name="twitter:card" content="summary">
 
 
-<link rel="canonical" href="http://yoursite.com/2020/07/22/wsl2-path/">
+<link rel="canonical" href="http://yoursite.com/2020/10/27/mbpHiDPI/">
 
 
 <script class="page-configurations">
@@ -50,7 +49,7 @@
   };
 </script>
 
-  <title>Remove Windows10 PATH from WSL PATH | sec4fun</title>
+  <title>Macbook pro 2020 开启HiDPI连接2K显示器 | sec4fun</title>
   
 
 
@@ -175,7 +174,7 @@
 
   <aside class="sidebar">
 
-    <div class="sidebar-inner sidebar-overview-active">
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-toc">
           文章目录
@@ -187,6 +186,7 @@
 
       <!--noindex-->
       <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9A%82%E6%97%B6%E5%85%B3%E9%97%AD%E7%B3%BB%E7%BB%9F%E7%9A%84SIP"><span class="nav-number">1.</span> <span class="nav-text">暂时关闭系统的SIP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BC%80%E5%90%AFHiDPI"><span class="nav-number">2.</span> <span class="nav-text">开启HiDPI</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%81%A2%E5%A4%8DSIP"><span class="nav-number">3.</span> <span class="nav-text">恢复SIP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%87%E6%8D%A2%E5%88%86%E8%BE%A8%E7%8E%87"><span class="nav-number">4.</span> <span class="nav-text">切换分辨率</span></a></li></ol></div>
       </section>
       <!--/noindex-->
 
@@ -259,7 +259,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/22/wsl2-path/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/10/27/mbpHiDPI/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/head.jpg">
@@ -275,7 +275,7 @@
     
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Remove Windows10 PATH from WSL PATH
+          Macbook pro 2020 开启HiDPI连接2K显示器
         </h1>
 
         <div class="post-meta-container">
@@ -285,16 +285,10 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">发表于</span>
+      
 
-      <time title="创建时间：2020-07-22 17:39:48" itemprop="dateCreated datePublished" datetime="2020-07-22T17:39:48+08:00">2020-07-22</time>
+      <time title="创建时间：2020-10-27 10:30:35 / 修改时间：11:03:30" itemprop="dateCreated datePublished" datetime="2020-10-27T10:30:35+08:00">2020-10-27</time>
     </span>
-      <span class="post-meta-item">
-        <span class="post-meta-item-icon">
-          <i class="far fa-calendar-check"></i>
-        </span>
-        <span class="post-meta-item-text">更新于</span>
-        <time title="修改时间：2020-10-13 15:15:35" itemprop="dateModified" datetime="2020-10-13T15:15:35+08:00">2020-10-13</time>
-      </span>
     <span class="post-meta-item">
       <span class="post-meta-item-icon">
         <i class="far fa-folder"></i>
@@ -313,7 +307,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>207</span>
+      <span>1.6k</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -331,10 +325,41 @@
     
     
     <div class="post-body" itemprop="articleBody">
-        <p>记录WSL2上PATH包含了Windows10的PATH变量解决办法。需要修改<code>/etc/wsl.conf</code>文件，在其中加入一些内容，具体如下：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo vi /etc/wsl.conf</span></span><br><span class="line"></span><br><span class="line">[interop]</span><br><span class="line">appendWindowsPath = false</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">exit</span></span></span><br><span class="line">c:\Users\user&gt; wslconfig /t Ubuntu</span><br><span class="line">c:\Users\user&gt; wsl</span><br><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">echo</span> <span class="variable">$PATH</span></span></span><br></pre></td></tr></table></figure>
+        <p> 关于Macbook pro 2020 开启HiDPI的方式。参考自<a target="_blank" rel="noopener" href="https://comsysto.github.io/Display-Override-PropertyList-File-Parser-and-Generator-with-HiDPI-Support-For-Scaled-Resolutions/">Scaled Resolutions</a>.</p>
+<a id="more"></a>
 
-<p><em>参考链接：<a target="_blank" rel="noopener" href="https://gist.github.com/ilbunilcho/4280bd55a10cefef75e74986b6bff936">链接</a></em></p>
+<h2 id="暂时关闭系统的SIP"><a href="#暂时关闭系统的SIP" class="headerlink" title="暂时关闭系统的SIP"></a>暂时关闭系统的SIP</h2><ul>
+<li>重启mac，按住<code>Command+R</code>，进入recovery模式</li>
+<li>登录用户，打开<code>菜单栏-&gt;实用工具-&gt;终端</code></li>
+<li>输入<code>csrutil disable</code></li>
+<li>重启机器</li>
+</ul>
+<h2 id="开启HiDPI"><a href="#开启HiDPI" class="headerlink" title="开启HiDPI"></a>开启HiDPI</h2><p>打开终端，输入</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo defaults write /Library/Preferences/com.apple.windowserver.plist DisplayResolutionEnabled -bool true</span><br></pre></td></tr></table></figure>
+
+<p>获取显示器信息，终端输入</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ioreg -lw0 | grep IODisplayPrefsKey</span><br></pre></td></tr></table></figure>
+
+<p>可以得到如下的显示器信息</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">| |   | |         &quot;IODisplayPrefsKey&quot; &#x3D; &quot;IOService:&#x2F;AppleACPIPlatformExpert&#x2F;PCI0@0&#x2F;AppleACPIPCI&#x2F;IGPU@2&#x2F;AppleIntelFramebuffer@0&#x2F;display0&#x2F;AppleBacklightDisplay-610-a03e&quot;</span><br><span class="line">| |   | |         &quot;IODisplayPrefsKey&quot; &#x3D; &quot;IOService:&#x2F;AppleACPIPlatformExpert&#x2F;PCI0@0&#x2F;AppleACPIPCI&#x2F;IGPU@2&#x2F;AppleIntelFramebuffer@1&#x2F;display0&#x2F;AppleDisplay-5e3-2490&quot;</span><br></pre></td></tr></table></figure>
+
+<p>其中<code>AppleDisplay</code>是外接的显示器，<code>AppleBacklightDisplay</code>是内置的显示器。主要是外接显示器的尾部信息<code>AppleDisplay-5e3-2490</code>,需要记住下面两个参数，后面会用到。</p>
+<ul>
+<li>DisplayVendorID 对应5e3</li>
+<li>DisplayProductID对应2490</li>
+</ul>
+<p>之后去这个网站<a target="_blank" rel="noopener" href="https://comsysto.github.io/Display-Override-PropertyList-File-Parser-and-Generator-with-HiDPI-Support-For-Scaled-Resolutions/">Scaled Resolutions</a>，填写左边表格的对应信息，会自动生成右边的文件，主要是下面几项</p>
+<ul>
+<li>DisplayProductName 这个显示器名称好像可以随意，我写的就是显示器界面出现的那个名称</li>
+<li>DisplayProductID 和 DisplayVendorID 就是上面获取到的对应显示器的这两个字段</li>
+</ul>
+<p>Scale Resolutions这部分选择默认即可。下载生成的文件(此处名称是DisplayProductID-2490.plist)，其去掉.plist名称后缀，并创建文件夹<code>DisplayVendorID-5e3</code>(就是对应的DisplayVendorID字段)，将其放入。</p>
+<p>之后将其拷贝到<code>/System/Library/Displays/Contents/Resources/Overrides/</code>目录下。对于10.15.7需要先将目录的read-only去掉(重启后会恢复)：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo mount -uw /</span><br><span class="line">killall Finder</span><br><span class="line">sudo mv DisplayVendorID-5e3 /System/Library/Displays/Contents/Resources/Overrides/</span><br></pre></td></tr></table></figure>
+
+<h2 id="恢复SIP"><a href="#恢复SIP" class="headerlink" title="恢复SIP"></a>恢复SIP</h2><p>重启机器，同样的方式进入<code>recovery</code>模式，打开终端，输入<code>csrutil enable</code>开启SIP，之后重启机器。</p>
+<h2 id="切换分辨率"><a href="#切换分辨率" class="headerlink" title="切换分辨率"></a>切换分辨率</h2><p>这里使用<a target="_blank" rel="noopener" href="http://avi.alkalay.net/software/RDM/">RDM</a>v2.2,安装后打开，点击右上角，正常情况下会看到目前的所有显示器的分辨率与频率，选择外接的显示器的分辨率那一栏，会显示可用分辨率列表，其中带闪电标记的就是开启了HiDPI的，我这边可以选择的就是<code>1920x1080⚡️</code>。</p>
+<p>搞定。</p>
 
     </div>
 
@@ -344,22 +369,18 @@
 
     <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/WSL2/" rel="tag"># WSL2</a>
-              <a href="/tags/Windows-10/" rel="tag"># Windows 10</a>
+              <a href="/tags/macbook/" rel="tag"># macbook</a>
           </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-item">
-                <a href="/2020/07/17/archeap/" rel="prev" title="论文阅读：Automatic Techniques to Systematically Discover New Heap Exploitation Primitives">
-                  <i class="fa fa-chevron-left"></i> 论文阅读：Automatic Techniques to Systematically Discover New Heap Exploitation Primitives
+                <a href="/2020/10/13/winTerminal/" rel="prev" title="winTerminal">
+                  <i class="fa fa-chevron-left"></i> winTerminal
                 </a>
             </div>
             <div class="post-nav-item">
-                <a href="/2020/09/17/netdisksign/" rel="next" title="关于某网盘APK的去签名方法">
-                  关于某网盘APK的去签名方法 <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
     </footer>
@@ -477,7 +498,7 @@ NexT.utils.loadComments('#gitalk-container', () => {
       repo        : 'blog-comments',
       owner       : 'Ma5ker',
       admin       : ['Ma5ker'],
-      id          : 'f37aad7d9ec5240fab4856ed05db8864',
+      id          : 'f6dfe52dd22d7c09367e4d35ad2ea2ff',
         language: '',
       distractionFreeMode: true
     });

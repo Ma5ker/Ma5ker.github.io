@@ -332,7 +332,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>结合源码对内存分配的流程进行分析。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <p>谈到linux内存分配，关键的就是malloc和free两个函数，下面主要分析这两个函数源码总结堆内存分配的流程。当然其中还涉及到<code>malloc_consolidate</code>等函数，也会在后面分析其作用过程。部分源码比较长，意思写在注释里面了，不想看可以直接看源码后的流程总结部分。</p>
 <h2 id="malloc"><a href="#malloc" class="headerlink" title="malloc"></a>malloc</h2><h3 id="libc-malloc"><a href="#libc-malloc" class="headerlink" title="__libc_malloc"></a>__libc_malloc</h3><p>malloc是c语言中常用的内存申请函数，<code>__libc_malloc</code>为其在glibc中的实现。下面是glibc中<code>__libc_malloc</code>代码实现</p>

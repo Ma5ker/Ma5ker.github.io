@@ -333,7 +333,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>&emsp;&emsp;在软件安全课上通过自带后门小程序完成了自己的第一个shellcode，借此总结下sellcode构造时的一些需要注意的问题和构造的技巧，同时开shellcode的坑，后面遇到shellcode的题目也会写到这个tag下。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <hr>
 <h2 id="Shellcode"><a href="#Shellcode" class="headerlink" title="Shellcode"></a>Shellcode</h2><p>&emsp;&emsp;Shellcode指的是一系列特意构造的指令注入一个程序来入侵该程序。Shellcode名字来源于其最开始时为了通过构造指令来得到一个root的shell。</p>
@@ -385,7 +385,8 @@ write:
     mov al,0x4
     mov bl,1;stdout的文件描述符
     mov dl,len
-    int 0x80</code></pre>
+    int 0x80
+</code></pre>
 <p>后面遇到其他的会继续补充 . . . </p>
 <hr>
 <h2 id="shellcode的构造技巧"><a href="#shellcode的构造技巧" class="headerlink" title="shellcode的构造技巧"></a>shellcode的构造技巧</h2><p>&emsp;&emsp;由于shellcode大多数情况下都是利用一些scanf等漏洞读入的，所以其存放地址根本无法确定，其中不能用绝对地址引用任何东西，那对于一段字符串，怎么获取其存放地址呢，shellcoder’s handbook给了一种巧妙的方法，如下：</p>
@@ -418,7 +419,8 @@ shellcode:
     int 0x80
 Call:
     Call shellcode;跳转执行，并将字符串地址压栈
-    DB &#39;Your string.&#39;;代打印字符串</code></pre>
+    DB &#39;Your string.&#39;;代打印字符串
+</code></pre>
 <p>&emsp;&emsp;可以看到，上述例子很巧妙的使用call指令结合pop esi指令得到了shellcode的定位。写博客过程中，突然发现，call pop这两者简直是绝配，软安上早已了解过两者的一次强大配合定位当前指令，即call 0,pop ecx，call 0 将下一条指令压栈，然后立即pop ecx，将返回地址弹出放入ecx，便获得了当前的指令地址。</p>
 <hr>
 <h2 id="内存中查找已载入的函数进行调用"><a href="#内存中查找已载入的函数进行调用" class="headerlink" title="内存中查找已载入的函数进行调用"></a>内存中查找已载入的函数进行调用</h2><p>&emsp;&emsp;除了系统调用外，还可以通过shellcode去调用程序中使用而载入内存的函数，此处我还没有了解到，待续 . . . </p>

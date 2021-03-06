@@ -334,7 +334,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>记录一下v8的配置过程以及在ctf比赛或者cve漏洞复现中需要用到的一些东西。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <p>其实v8的配置本来很简单的,但是因为GFW的存在，变得有点复杂，上周甚至差点把我弄崩溃了，主要是在代理设置过程，对ubuntu下代理设置不太懂，太蛋疼了。</p>
 <h2 id="设置代理"><a href="#设置代理" class="headerlink" title="设置代理"></a>设置代理</h2><p>v8配置需要用git获取depot_tools,并且depot_tools中的脚本下载了google git的文件，也需要代理才行，ubuntu下代理比较蛋疼，前面迷糊了好久，之后大概懂了。</p>

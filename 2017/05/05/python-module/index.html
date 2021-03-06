@@ -333,24 +333,33 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>&emsp;&emsp;Python中有些模块很难安装，摸索到一些模块的安装方法，记录一下以防以后要用。本文待续，以后安装其他模块再补充…………</p>
-<a id="more"></a>
+<span id="more"></span>
 <h2 id="python3安装pycrypto"><a href="#python3安装pycrypto" class="headerlink" title="python3安装pycrypto"></a>python3安装pycrypto</h2><p>对于kali linux，python2默认安装了pycrypto，但是对于python3并没有。首先安装python3的一些依赖环境：</p>
-<pre><code>apt-get install python3-dev;</code></pre>
+<pre><code>apt-get install python3-dev;
+</code></pre>
 <p>在kali linux下使用命令pip会默认使用python2的pip。<br>按照网上的说法，运行命令：</p>
-<pre><code>pip3 install pycrypto;</code></pre>
+<pre><code>pip3 install pycrypto;
+</code></pre>
 <p>发现返回找不到命令pip3，使用命令：</p>
-<pre><code>python3 -m pip install pycrypto</code></pre>
+<pre><code>python3 -m pip install pycrypto
+</code></pre>
 <p>显示找不到模块pip，可知linux下默认并没有安装python3的pip模块，猜测python3可能安装了easy_install模块，调用easy_install模块安装pip运行命令：</p>
-<pre><code>python3 -m easy_install pip</code></pre>
+<pre><code>python3 -m easy_install pip
+</code></pre>
 <p>安装完pip，运行命令：</p>
-<pre><code>python3 -m pip install pycrypto</code></pre>
+<pre><code>python3 -m pip install pycrypto
+</code></pre>
 <p>成功在python3里安装模块pycrypto</p>
-<h2 id="安装pillow-不知道是否可行，未完，待续……"><a href="#安装pillow-不知道是否可行，未完，待续……" class="headerlink" title="安装pillow(不知道是否可行，未完，待续……)"></a>安装pillow(不知道是否可行，未完，待续……)</h2><pre><code>pip install -I --no-cache-dir -v Pillow</code></pre>
-<h2 id="kali-linux64位安装gmpy2"><a href="#kali-linux64位安装gmpy2" class="headerlink" title="kali linux64位安装gmpy2"></a>kali linux64位安装gmpy2</h2><pre><code>pip install gmpy2</code></pre>
+<h2 id="安装pillow-不知道是否可行，未完，待续……"><a href="#安装pillow-不知道是否可行，未完，待续……" class="headerlink" title="安装pillow(不知道是否可行，未完，待续……)"></a>安装pillow(不知道是否可行，未完，待续……)</h2><pre><code>pip install -I --no-cache-dir -v Pillow
+</code></pre>
+<h2 id="kali-linux64位安装gmpy2"><a href="#kali-linux64位安装gmpy2" class="headerlink" title="kali linux64位安装gmpy2"></a>kali linux64位安装gmpy2</h2><pre><code>pip install gmpy2
+</code></pre>
 <p>报错，猜测为环境问题，执行命令：</p>
-<pre><code>apt-get install gcc python-dev</code></pre>
+<pre><code>apt-get install gcc python-dev
+</code></pre>
 <p>后，继续</p>
-<pre><code>pip install gmpy2</code></pre>
+<pre><code>pip install gmpy2
+</code></pre>
 <p>仍然报错，查看报错信息：</p>
 <pre><code>In file included from src/gmpy2.c:426:0:
 src/gmpy.h:252:20: fatal error: mpfr.h: 没有那个文件或目录
@@ -358,16 +367,19 @@ src/gmpy.h:252:20: fatal error: mpfr.h: 没有那个文件或目录
                     ^
 compilation terminated.
 error: command &#39;x86_64-linux-gnu-gcc&#39; failed with exit status 1
-Command &quot;/usr/bin/python3 -u -c &quot;import setuptools, tokenize;__file__=&#39;/tmp/pip-build-smq1ryxv/gmpy2/setup.py&#39;;f=getattr(tokenize, &#39;open&#39;, open)(__file__);code=f.read().replace(&#39;\r\n&#39;, &#39;\n&#39;);f.close();exec(compile(code, __file__, &#39;exec&#39;))&quot; install --record /tmp/pip-491iqg3a-record/install-record.txt --single-version-externally-managed --compile&quot; failed with error code 1 in /tmp/pip-build-smq1ryxv/gmpy2/</code></pre>
+Command &quot;/usr/bin/python3 -u -c &quot;import setuptools, tokenize;__file__=&#39;/tmp/pip-build-smq1ryxv/gmpy2/setup.py&#39;;f=getattr(tokenize, &#39;open&#39;, open)(__file__);code=f.read().replace(&#39;\r\n&#39;, &#39;\n&#39;);f.close();exec(compile(code, __file__, &#39;exec&#39;))&quot; install --record /tmp/pip-491iqg3a-record/install-record.txt --single-version-externally-managed --compile&quot; failed with error code 1 in /tmp/pip-build-smq1ryxv/gmpy2/
+</code></pre>
 <p>显示缺少mfpr.h文件，搜索后得到解决方法为：下载最新的mpfr的压缩包安装：<br>下载地址：<a href="ftp://ftp.gnu.org/gnu/mpfr/">mpfr</a><br>我下载的版本是mpfr-3.1.5<br>解压后进入目录：</p>
 <pre><code>cd mpfr-3.1.5
 ./configure
 make
 make check
 VERBOSE=1 make check
-make install</code></pre>
+make install
+</code></pre>
 <p>无报错，安装完成<br>再次执行：</p>
-<pre><code>pip install gmpy2</code></pre>
+<pre><code>pip install gmpy2
+</code></pre>
 <p>出现新报错信息：</p>
 <pre><code>In file included from src/gmpy2.c:426:0:
 src/gmpy.h:261:19: fatal error: mpc.h: 没有那个文件或目录
@@ -375,14 +387,17 @@ src/gmpy.h:261:19: fatal error: mpc.h: 没有那个文件或目录
                    ^
 compilation terminated.
 error: command &#39;x86_64-linux-gnu-gcc&#39; failed with exit status 1
-Command &quot;/usr/bin/python3 -u -c &quot;import setuptools, tokenize;__file__=&#39;/tmp/pip-build-xnmfmila/gmpy2/setup.py&#39;;f=getattr(tokenize, &#39;open&#39;, open)(__file__);code=f.read().replace(&#39;\r\n&#39;, &#39;\n&#39;);f.close();exec(compile(code, __file__, &#39;exec&#39;))&quot; install --record /tmp/pip-qvbp_577-record/install-record.txt --single-version-externally-managed --compile&quot; failed with error code 1 in /tmp/pip-build-xnmfmila/gmpy2/</code></pre>
+Command &quot;/usr/bin/python3 -u -c &quot;import setuptools, tokenize;__file__=&#39;/tmp/pip-build-xnmfmila/gmpy2/setup.py&#39;;f=getattr(tokenize, &#39;open&#39;, open)(__file__);code=f.read().replace(&#39;\r\n&#39;, &#39;\n&#39;);f.close();exec(compile(code, __file__, &#39;exec&#39;))&quot; install --record /tmp/pip-qvbp_577-record/install-record.txt --single-version-externally-managed --compile&quot; failed with error code 1 in /tmp/pip-build-xnmfmila/gmpy2/
+</code></pre>
 <p>由报错信息知出现mpc.h缺失，下载安装<a href="ftp://gcc.gnu.org/pub/gcc/infrastructure/">mpc</a>压缩包，这里我下载的是mpc-1.0.3</p>
 <pre><code>cd mpc-1.0.3
 ./configure
 make
-make install</code></pre>
+make install
+</code></pre>
 <p>无报错信息，成功安装<br>之后再安装gmpy2</p>
-<pre><code>pip install gmpy2</code></pre>
+<pre><code>pip install gmpy2
+</code></pre>
 <p>无特殊情况的话，最终应该会显示成功安装。</p>
 
     </div>

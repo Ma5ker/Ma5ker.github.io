@@ -340,7 +340,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>&emsp;&emsp;Scrapy是一个python开发的快速高层次的屏幕抓取和web抓取框架，用于抓取web站点并从页面中提取结构化的数据。广泛用于数据挖掘、监测和自动化测试。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <h2 id="Scrapy-框架结构"><a href="#Scrapy-框架结构" class="headerlink" title="Scrapy 框架结构"></a>Scrapy 框架结构</h2><ul>
 <li>引擎：用来处理整个系统的数据流，触发事务；</li>
@@ -362,15 +362,18 @@
 <li>引擎将(Spider返回的)爬取到的Item给Item Pipeline，将(Spider返回的)Request给调度器。</li>
 <li>(从第二步)重复直到调度器中没有更多地request，引擎关闭该网站。</li>
 </ul>
-<h2 id="实例–爬取豆瓣电影top250"><a href="#实例–爬取豆瓣电影top250" class="headerlink" title="实例–爬取豆瓣电影top250"></a>实例–爬取豆瓣电影top250</h2><h3 id="首先用scrapy生成工程文件"><a href="#首先用scrapy生成工程文件" class="headerlink" title="首先用scrapy生成工程文件"></a>首先用scrapy生成工程文件</h3><pre><code>scrapy startproject DoubanMovie</code></pre>
+<h2 id="实例–爬取豆瓣电影top250"><a href="#实例–爬取豆瓣电影top250" class="headerlink" title="实例–爬取豆瓣电影top250"></a>实例–爬取豆瓣电影top250</h2><h3 id="首先用scrapy生成工程文件"><a href="#首先用scrapy生成工程文件" class="headerlink" title="首先用scrapy生成工程文件"></a>首先用scrapy生成工程文件</h3><pre><code>scrapy startproject DoubanMovie
+</code></pre>
 <p>文件夹结构如下：</p>
 <pre><code>scrapy.cfg: 项目的配置文件。
 DoubanMovie /: 该项目的python模块。之后您将在此加入代码。
 DoubanMovie /items.py: 项目中的item文件。
 DoubanMovie /pipelines.py: 项目中的pipelines文件。
 DoubanMovie /settings.py: 项目的设置文件。
-DoubanMovie /spiders/: 放置spider代码的目录</code></pre>
-<h3 id="根据basic模板生成爬虫"><a href="#根据basic模板生成爬虫" class="headerlink" title="根据basic模板生成爬虫"></a>根据basic模板生成爬虫</h3><pre><code>scrapy genspider  Doubanmovietop250  movie.douban.com</code></pre>
+DoubanMovie /spiders/: 放置spider代码的目录
+</code></pre>
+<h3 id="根据basic模板生成爬虫"><a href="#根据basic模板生成爬虫" class="headerlink" title="根据basic模板生成爬虫"></a>根据basic模板生成爬虫</h3><pre><code>scrapy genspider  Doubanmovietop250  movie.douban.com
+</code></pre>
 <h3 id="改写items-py文件"><a href="#改写items-py文件" class="headerlink" title="改写items.py文件"></a>改写items.py文件</h3><p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/item.png" alt="item"></p>
 <h3 id="spider改写"><a href="#spider改写" class="headerlink" title="spider改写"></a>spider改写</h3><p>为了防止爬虫检测，先将请求头进行改写，加入user-agent信息，生成新的头部：</p>
 <p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/user-agent.png" alt="user-agent"></p>
@@ -391,9 +394,11 @@ HTTPCACHE_ENABLED = True
 HTTPCACHE_EXPIRATION_SECS = 0
 HTTPCACHE_DIR = &#39;httpcache&#39;
 HTTPCACHE_IGNORE_HTTP_CODES = []
-HTTPCACHE_STORAGE = &#39;scrapy.extensions.httpcache.FilesystemCacheStorage&#39;</code></pre>
+HTTPCACHE_STORAGE = &#39;scrapy.extensions.httpcache.FilesystemCacheStorage&#39;
+</code></pre>
 <p>以上几个参数对本地缓存进行配置，如果开启本地缓存会优先读取本地缓存，从而加快爬取速度.</p>
-<h3 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h3><pre><code>scrapy crawl douban_movie_top250 -o douban.csv </code></pre>
+<h3 id="运行"><a href="#运行" class="headerlink" title="运行"></a>运行</h3><pre><code>scrapy crawl douban_movie_top250 -o douban.csv 
+</code></pre>
 <p>这里-o表示输出到文件，后接文件名，scrapy会根据文件后缀选择相应格式，这里为csv。</p>
 <p>爬取结果：</p>
 <p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/3/result.png" alt="result"></p>
@@ -426,7 +431,8 @@ class Doubanmovietop250Spider(scrapy.Spider):
         next_url = response.xpath(&#39;//span[@class=&quot;next&quot;]/a/@href&#39;).extract()
         if next_url:
             next_url = &#39;https://movie.douban.com/top250&#39; + next_url[0]
-            yield Request(next_url, headers=self.headers)</code></pre>
+            yield Request(next_url, headers=self.headers)
+</code></pre>
 
     </div>
 

@@ -341,7 +341,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>简单记录下关于CTF中的802.11 wireless LAN协议流量分析题的解法和相关工具使用。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <p>例子来自hackinglab，题目给出cap包要求分析流量得到wifi密码。</p>
 <p>wireshark打开如下图：</p>
@@ -356,7 +356,7 @@
 <p>所以需要根据给定信息生成弱密码，给定的信息应该是用来猜出生日期的吧(笑)。</p>
 <p>大三是2014年，假设是20多岁，那么其出生日期在1990-2000之间。</p>
 <p>用python生成简单的弱口令字典跑着试试。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> open(<span class="string">&quot;passwd.txt&quot;</span>,<span class="string">&quot;w&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    <span class="keyword">for</span> y <span class="keyword">in</span> range(<span class="number">1990</span>,<span class="number">2001</span>):</span><br><span class="line">        <span class="keyword">for</span> m <span class="keyword">in</span> range(<span class="number">1</span>,<span class="number">13</span>):</span><br><span class="line">            <span class="keyword">for</span> d <span class="keyword">in</span> range(<span class="number">1</span>,<span class="number">32</span>):</span><br><span class="line">                f.write(<span class="string">&quot;%d%02d%02d\n&quot;</span> % (y,m,d))</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;passwd.txt&quot;</span>,<span class="string">&quot;w&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    <span class="keyword">for</span> y <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1990</span>,<span class="number">2001</span>):</span><br><span class="line">        <span class="keyword">for</span> m <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>,<span class="number">13</span>):</span><br><span class="line">            <span class="keyword">for</span> d <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>,<span class="number">32</span>):</span><br><span class="line">                f.write(<span class="string">&quot;%d%02d%02d\n&quot;</span> % (y,m,d))</span><br></pre></td></tr></table></figure>
 
 <p>利用aircrack-ng开始爆破：</p>
 <p><img src="/images/802.11/aircrack-ng%E7%88%86%E7%A0%B4%E9%85%8D%E7%BD%AE.png" alt="aircrack-ng爆破配置"></p>

@@ -336,7 +336,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>&emsp;&emsp;文本分类是在给定的分类体系下，让计算机根据给定文本的内容，将其判定为事先给定的若干个文本类别中的某一类或几类的过程。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <h2 id="文本分类过程"><a href="#文本分类过程" class="headerlink" title="文本分类过程"></a>文本分类过程</h2><p>一般来说，文本分类可以分为以下过程：</p>
 <ul>
@@ -407,7 +407,8 @@ print(&quot;垃圾邮件列表读取分词完毕...&quot;)
 vtable=list(set(vtable))
 #词汇表存入文件
 with open(&quot;词汇表.txt&quot;,&#39;w&#39;,encoding=&#39;utf-8&#39;) as f:
-    f.write(str(vtable))</code></pre>
+    f.write(str(vtable))
+</code></pre>
 <h3 id="创建一个全部邮件的向量矩阵，和邮件类型矩阵，将每封邮件分词后计算得到其特征向量"><a href="#创建一个全部邮件的向量矩阵，和邮件类型矩阵，将每封邮件分词后计算得到其特征向量" class="headerlink" title="创建一个全部邮件的向量矩阵，和邮件类型矩阵，将每封邮件分词后计算得到其特征向量"></a>创建一个全部邮件的向量矩阵，和邮件类型矩阵，将每封邮件分词后计算得到其特征向量</h3><pre><code>#创建全部邮件的向量矩阵
 trainMatrix=np.zeros((200,len(vtable)))
 #创建邮件类型的向量，因为是按照顺序读取，前100项为0(正常邮件)，后100项为1(垃圾邮件)
@@ -446,7 +447,8 @@ while line != &quot;&quot;:
     line = source_2.readline()
     line=re.sub(&#39;[^\u4e00-\u9fa5]+&#39;,&#39;&#39;,line)
     count=count+1
-source_2.close()</code></pre>
+source_2.close()
+</code></pre>
 <h3 id="定义函数trainNB去处理邮件的向量，训练得到先验概率、条件概率"><a href="#定义函数trainNB去处理邮件的向量，训练得到先验概率、条件概率" class="headerlink" title="定义函数trainNB去处理邮件的向量，训练得到先验概率、条件概率"></a>定义函数trainNB去处理邮件的向量，训练得到先验概率、条件概率</h3><pre><code>def trainNB(trainMatrix,trainCategory):
     &#39;&#39;&#39;
         trainMatrix 表示所有邮件的向量,
@@ -468,7 +470,8 @@ source_2.close()</code></pre>
             p0Denom=p0Denom+sum(trainMatrix[i])
     p1=np.log(p1Num/p1Denom)#防止乘法溢出，取对数
     p0=np.log(p0Num/p0Denom)#防止乘法溢出，取对数
-    return pSpam,p1,p0</code></pre>
+    return pSpam,p1,p0
+</code></pre>
 <h3 id="判定结果"><a href="#判定结果" class="headerlink" title="判定结果"></a>判定结果</h3><p>&emsp;&emsp;读取测试文件，对每个邮件进行分词，计算得到其特征向量，与前面得到的值进行运算得到后验概率，取大者作为其类型判别，将结果存入文件’result.txt’：</p>
 <pre><code>#调用trainNB得到三个参数
 pSpam,p1,p0=trainNB(trainMatrix,trainCategory)
@@ -518,7 +521,8 @@ for i in range(len(targetMatrix)):
 
 #分类结果存入文件
 with open(&quot;result.txt&quot;,&#39;w&#39;,encoding=&#39;utf-8&#39;) as f:
-    f.write(str(resultMatrix))</code></pre>
+    f.write(str(resultMatrix))
+</code></pre>
 <h3 id="将判断结果与实际相比较得到判断正确率"><a href="#将判断结果与实际相比较得到判断正确率" class="headerlink" title="将判断结果与实际相比较得到判断正确率"></a>将判断结果与实际相比较得到判断正确率</h3><pre><code>#计算正确率
 #用正确结果的矩阵去和得到的矩阵比较得到正确个数
 countRight=0
@@ -526,7 +530,8 @@ right=[0 for i in range(50)]+[1 for i in range(50)]
 for i in range(len(right)):
     if right[i]==resultMatrix[i]:
         countRight += 1
-print(&#39;分类正确率: &#39;+str(countRight)+&#39;%&#39; )</code></pre>
+print(&#39;分类正确率: &#39;+str(countRight)+&#39;%&#39; )
+</code></pre>
 <p>词汇表如下：</p>
 <p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/5/table.png" alt="词汇表"></p>
 <p>运行结果图如下：</p>

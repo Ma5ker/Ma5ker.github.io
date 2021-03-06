@@ -1021,7 +1021,7 @@
         <i class="far fa-file-word"></i>
       </span>
       <span class="post-meta-item-text">本文字数：</span>
-      <span>575</span>
+      <span>574</span>
     </span>
     <span class="post-meta-item" title="阅读时长">
       <span class="post-meta-item-icon">
@@ -1044,11 +1044,10 @@
 <p>  [Desktop Entry]           //每个desktop文件都以这个标签开始<br>  Version = 1.0             //Desktop Entry的版本<br>  Name = Firefox            //程序名称<br>  Comment = a description   //程序描述<br>  Exec =                    //程序的启动命令<br>  Icon = filepath for icon  //快捷方式的图标<br>  Terminal = false          //是否在终端中运行<br>  Type = Application    //desktop的类型，常见值有”Application”和”Link”</p>
 </li>
 <li><p>其二，使用gnome-panel工具：</p>
+<p>  $:sudo apt-get install gnome-panel<br>  $:sudo gnome-desktop-item-edit /usr/share/applications/ –create-new</p>
+<p>这条命令就是在/usr/share/applications/下创建一个新的图标，之后会弹出窗口，填写name, excv, comment等信息，创建成功了，可以在该目录下看到并且能在文件搜索框中搜索得到应用</p>
 </li>
 </ul>
-<pre><code>$:sudo apt-get install gnome-panel
-$:sudo gnome-desktop-item-edit /usr/share/applications/ --create-new</code></pre>
-<p>这条命令就是在/usr/share/applications/下创建一个新的图标，之后会弹出窗口，填写name, excv, comment等信息，创建成功了，可以在该目录下看到并且能在文件搜索框中搜索得到应用</p>
 
       
     </div>

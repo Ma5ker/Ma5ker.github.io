@@ -326,7 +326,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>主要是通过main函数对AFL的workflow进行梳理，对于细枝末节的代码并未细究。由于主要是针对non-instrument，对于AFL使用forkserver进行的一些库的预加载以提高execv执行程序速度等奇技淫巧也没看太仔细。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <hr>
 <p><em>源码注释:<a target="_blank" rel="noopener" href="https://github.com/Ma5ker/AFL_COMMENT.git">AFL_COMMENT</a></em></p>
@@ -567,7 +567,7 @@
 </ul>
 </li>
 <li>insert(25%)<ul>
-<li>[0,end] -&gt; [ 0, clone_to ] + [随机0-255 | 随机输入的某个值 ] * clone_len    + [ clone_to, end ]</li>
+<li> [0,end] -&gt; [ 0, clone_to ] + [随机0-255 | 随机输入的某个值 ] * clone_len    + [ clone_to, end ]</li>
 </ul>
 </li>
 </ul>

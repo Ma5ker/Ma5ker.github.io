@@ -333,17 +333,20 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>&emsp;&emsp;网易云音乐出了Linux下版本，由于电脑装的Kali Linux版本，而网易云官网所提供的并没有debian版本的网易云音乐安装包，安装时出现环境依赖无法解决。找了好久找到一篇通过修改deb包成功在kali上安装网易云的大佬的博客，记录如下备份。</p>
-<a id="more"></a>
+<span id="more"></span>
 <hr>
 <h4 id="安装包下载"><a href="#安装包下载" class="headerlink" title="安装包下载"></a>安装包下载</h4><p>下载地址：<a target="_blank" rel="noopener" href="https://pan.baidu.com/s/1hrLMXAs" title="netease-cloud-music">netease-cloud-music</a><br>安装包根据netease-cloud-music_1.0.0-1_amd64_deepin15.deb修改</p>
 <h4 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h4><pre><code>dpkg -i netease-cloud-music_1.0.0-1_amd64.kali.deb
 apt-get install -f
-dpkg -i netease-cloud-music_1.0.0-1_amd64.kali.deb</code></pre>
+dpkg -i netease-cloud-music_1.0.0-1_amd64.kali.deb
+</code></pre>
 <h4 id="修改启动命令"><a href="#修改启动命令" class="headerlink" title="修改启动命令"></a>修改启动命令</h4><p>装过chrome的应该都知道，有些应用比如chrome并不支持直接在系统中以root身份启动，会出现报错信息，由于kali linux默认root身份登录，故如同chrome，应在启动命令中添加–no-sandbox参数<br>    vim /usr/share/applications/netease-cloud-music.desktop</p>
 <p>修改：</p>
-<pre><code>Exec=netease-cloud-music %U</code></pre>
+<pre><code>Exec=netease-cloud-music %U
+</code></pre>
 <p>为</p>
-<pre><code>Exec=netease-cloud-music %U --no-sandbox</code></pre>
+<pre><code>Exec=netease-cloud-music %U --no-sandbox
+</code></pre>
 <p>之后便可以双击图标运行了。<br>至此安装完成。</p>
 
     </div>

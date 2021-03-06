@@ -335,7 +335,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>&emsp;&emsp;python的爬虫技术中的正则表达式部分，主要涉及到re库的使用。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <h2 id="Python-re库"><a href="#Python-re库" class="headerlink" title="Python re库"></a>Python re库</h2><p>python的re库，其中涉及到几个重要的函数：</p>
 <ul>
@@ -348,17 +348,20 @@
 </ul>
 <h2 id="一些有用的正则表达式"><a href="#一些有用的正则表达式" class="headerlink" title="一些有用的正则表达式"></a>一些有用的正则表达式</h2><ul>
 <li><p>email地址(只允许英文字母、数字、下划线、英文句号以及中划线):</p>
-<pre><code>  ^[\w_-]+@[\w_-]+(\.[\w_-]+)+$</code></pre>
+<pre><code>  ^[\w_-]+@[\w_-]+(\.[\w_-]+)+$
+</code></pre>
 </li>
 <li><p>IPV4地址(IP地址分为4段，每段0-255):</p>
-<pre><code>  ^(0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5])(\.(0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5]))&#123;3&#125;$</code></pre>
+<pre><code>  ^(0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5])(\.(0|[1-9]\d?|1\d\d|2[0-4]\d|25[0-5]))&#123;3&#125;$
+</code></pre>
 </li>
 </ul>
 <p>后续积累的写在这里…</p>
 <h2 id="爬取淘宝的某商品页面-此处选取商品为“书包”"><a href="#爬取淘宝的某商品页面-此处选取商品为“书包”" class="headerlink" title="爬取淘宝的某商品页面(此处选取商品为“书包”)"></a>爬取淘宝的某商品页面(此处选取商品为“书包”)</h2><p>通过对搜索页面的URL的观察，容易发现，其URL遵循一定的规律，如下:</p>
 <p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/2/taobao_url.png" alt="taobao_url"></p>
 <p>其搜索页面基本URL格式如下：</p>
-<pre><code>https://s.taobao.com/search?q=&#39; + goods&#39;&amp;s=&#39; + str(44 * i)</code></pre>
+<pre><code>https://s.taobao.com/search?q=&#39; + goods&#39;&amp;s=&#39; + str(44 * i)
+</code></pre>
 <p>其中goods表示商品名称，此处是“书包”，i表示页数</p>
 <p>代码结构如下：</p>
 <pre><code>#利用requests库获取HTML文本：
@@ -381,7 +384,8 @@ def getInfo(ilt,n,raw_url):
             price = eval(plt[t].split(&#39;:&#39;)[1])
             title = eval(tlt[t].split(&#39;:&#39;)[1])
             ilt.append([price, title])
-#其中ilt是最后存放信息的列表，raw_url为基本的地址 &#39;https://s.taobao.com/search?q=&#39;，后面通过商品名称和页数进行补足；函数遍历每个页将需要的信息找出来，以列表形式添加到列表中作为元素。</code></pre>
+#其中ilt是最后存放信息的列表，raw_url为基本的地址 &#39;https://s.taobao.com/search?q=&#39;，后面通过商品名称和页数进行补足；函数遍历每个页将需要的信息找出来，以列表形式添加到列表中作为元素。
+</code></pre>
 <p>查看网页源代码：</p>
 <p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/2/taobao_source.png" alt="taobao_source"></p>
 <p>可以发现 view_price表示的是价格， raw_title对应的是标题，故用正则表达式找出对应的内容填入。</p>
@@ -400,7 +404,8 @@ def main():
     n=2
     raw_url=&#39;https://s.taobao.com/search?q=&#39;
     getInfo(ilt,n,raw_url)
-printList(ilt,len(ilt))</code></pre>
+printList(ilt,len(ilt))
+</code></pre>
 
     </div>
 

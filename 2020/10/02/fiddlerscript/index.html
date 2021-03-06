@@ -332,7 +332,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>关于fiddlerscript暂时没在官方找到一个正常的文档，只知道是基于jscript .net的，并且在论坛看到一些使用例子。这里对目前知道的一些东西做一个整理。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <h2 id="关于fiddlerscript"><a href="#关于fiddlerscript" class="headerlink" title="关于fiddlerscript"></a>关于fiddlerscript</h2><p>打开fiddlerscript后右边点击可以看到当前的fiddlerscript，这个团队给其做了一个小型编辑器，实际是位于<code>C:\Users\username\Documents\Fiddler2\Scripts</code>文件夹下的<code>CustomRules.js</code>文件。</p>
 <p>整个fiddlerscript位于一个Handles类中，fiddler在运行时会解析执行这个类中的回调函数，这些回调函数类似于在一个请求回复过程中的各个阶段做了hook，以此实现对请求与响应包在各个阶段时的修改，类似于chrome插件中通过<code>addListener</code>在各个阶段进行插桩处理。具体的不同阶段可以在上方Go to栏查看，总共大概有9个，其中比较常用的就是<code>onBeforeRequest</code>和<code>onBeforeResponse</code>两个，分别是在发送请求前和将响应包交给网页前。一般通过在<code>onBeforeRequest</code>中加入代码对请求参数进行处理，在<code>onBeforeResponse</code>中加入代码处理相应参数。</p>

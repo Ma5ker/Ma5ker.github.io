@@ -326,7 +326,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>visual studio之前就一直出现的git的代理问题，我今天终于知道解决办法了。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <h3 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h3><p>众所周知，由于网络环境问题，github最好挂上代理。于是乎，我设置了如下socks代理：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git config --global http.proxy &#x27;socks5://127.0.0.1:8888&#x27;</span><br><span class="line">git config --global https.proxy &#x27;socks5://127.0.0.1:8888&#x27;</span><br></pre></td></tr></table></figure>

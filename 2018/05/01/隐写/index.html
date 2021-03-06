@@ -336,7 +336,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>&emsp;&emsp;之前对隐写比较感兴趣，研究过一些CTF中隐写的东西，但是这次xctf发现大概全忘了。实时证明，光靠脑子还是信不过的，学习嘛，还是得时不时做点总结的。结合这次的xctf，看大佬writeup加自己查的一些关于隐写的解题思路资料，收集到这儿，以后做题时参考一下。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <hr>
 <h2 id="最简单的隐写–图种"><a href="#最简单的隐写–图种" class="headerlink" title="最简单的隐写–图种"></a>最简单的隐写–图种</h2><p>&emsp;&emsp;第一次看到的隐写术，是一种叫做图种的东西。所谓图种是最简单的，就是利用图片和压缩包的格式，将两者的二进制数据接起来，对于图片查看器，会读取jpeg的头部和尾部，忽略多余部分；而对于解压器，也是寻找其头部。这样也就做到了隐藏信息。这种就简单的用解压软件解压就行了，不再话下。</p>
@@ -344,7 +344,8 @@
 <h2 id="图片尾缀信息隐写–zlib后缀"><a href="#图片尾缀信息隐写–zlib后缀" class="headerlink" title="图片尾缀信息隐写–zlib后缀"></a>图片尾缀信息隐写–zlib后缀</h2><p>&emsp;&emsp;故名思意，在图片尾部加入一些信息，并将各种编码等知识点揉在一起玩，直接上这次的题，右图是目标图片：</p>
 <p><img src="/images/Steganography/task_ctf_04_Lx5phgB.png" alt="task_ctf_04_Lx5phgB"></p>
 <p>binwalk查看下：</p>
-<pre><code>binwalk task_ctf_04_Lx5phgB.png</code></pre>
+<pre><code>binwalk task_ctf_04_Lx5phgB.png
+</code></pre>
 <p>结果如图：</p>
 <p><img src="/images/Steganography/binwalk_ret.png" alt="binwalk result"></p>
 <p>&emsp;&emsp;可以看到，其中藏有zlib后缀，写个脚本恢复一下得到xxx，嗯没错，大佬的writeup就是这样写了一句，我查了好一会……<br>首先用winhex打开图片，找到binwalk中指向的偏移，将后半部分直接复制下来，用脚本处理如下：</p>
@@ -360,7 +361,8 @@ bb64=temp.decode(&#39;hex&#39;)
 #解码后发现貌似是base64，继续base64解码后写入文件
 ret = base64.b64decode(bb64)
 with open(&#39;result&#39;,&#39;w&#39;) as f:
-    f.write(ret)</code></pre>
+    f.write(ret)
+</code></pre>
 <p>&emsp;&emsp;这里观察头部为4B 50 03 04，容易联想到zip压缩包的头部，为50 4B 03 04，交换头两个字节，双击打开后发现注释上给出了password：</p>
 <p><img src="/images/Steganography/zhushi.png" alt="注释"></p>
 <p>为加密压缩包无疑，在python2.7中输入1/0，得到password为:<code>integer division or modulo by zero</code><br>解压后cat得到flag</p>

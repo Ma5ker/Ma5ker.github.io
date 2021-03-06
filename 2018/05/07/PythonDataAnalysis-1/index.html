@@ -332,35 +332,41 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>&emsp;&emsp;使用python的requests库和BeautifulSoup4去对网页信息进行爬取和解析，获得制定信息；其中涉及Javascript渲染的动态页面，我采用了selenium + PlantomJS的动态网页爬取技术进行了爬取。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <h2 id="Requests库"><a href="#Requests库" class="headerlink" title="Requests库"></a>Requests库</h2><p>&emsp;&emsp;Requests 是用Python语言编写，基于 urllib，采用 Apache2 Licensed 开源协议的 HTTP 库。</p>
-<h3 id="安装方法"><a href="#安装方法" class="headerlink" title="安装方法"></a>安装方法</h3><pre><code>Pip install requests</code></pre>
+<h3 id="安装方法"><a href="#安装方法" class="headerlink" title="安装方法"></a>安装方法</h3><pre><code>Pip install requests
+</code></pre>
 <h3 id="一般使用方法"><a href="#一般使用方法" class="headerlink" title="一般使用方法"></a>一般使用方法</h3><pre><code>import requests
 r = requests.get(&quot;http://www.whu.edu.cn/ &quot;) 
 print(r.status_code) #返回状态码
 print(r.headers) #返回Response消息报头
 print(r.text) #返回响应正文
-print(r.content) #以二进制编码返回响应正文</code></pre>
+print(r.content) #以二进制编码返回响应正文
+</code></pre>
 <h2 id="BeautifulSoup库"><a href="#BeautifulSoup库" class="headerlink" title="BeautifulSoup库"></a>BeautifulSoup库</h2><p>&emsp;&emsp;BeautifulSoup 是一个可以从HTML或 XML文件中提取数据的Python库.它能够通 过转换器实现文档导航、查找、修改。</p>
-<h3 id="安装方法-1"><a href="#安装方法-1" class="headerlink" title="安装方法"></a>安装方法</h3><pre><code>pip install beautifulsoup4</code></pre>
+<h3 id="安装方法-1"><a href="#安装方法-1" class="headerlink" title="安装方法"></a>安装方法</h3><pre><code>pip install beautifulsoup4
+</code></pre>
 <h3 id="一般使用"><a href="#一般使用" class="headerlink" title="一般使用"></a>一般使用</h3><pre><code>import requests 
 r=requests.get(&quot;https://whu.edu.cn/coremail/common/index_cm40.jsp&quot;) 
 demo=r.text
 from bs4 import BeautifulSoup 
 soup=BeautifulSoup(demo,&#39;html.parser&#39;) #html解析器
-print(soup.prettify())</code></pre>
+print(soup.prettify())
+</code></pre>
 <h2 id="selenium-与-PlantomJS"><a href="#selenium-与-PlantomJS" class="headerlink" title="selenium 与 PlantomJS"></a>selenium 与 PlantomJS</h2><p>&emsp;&emsp;selenium 是一套完整的web应用程序测试系统，包含了测试的录制（selenium IDE）,编写及运行（Selenium Remote Control）和测试的并行处理（Selenium Grid）。Selenium的核心Selenium Core基于JsUnit，完全由JavaScript编写，因此可以用于任何支持JavaScript的浏览器上，可以模拟真实浏览器，自动化测试工具，支持多种浏览器，爬虫中主要用来解决JavaScript渲染问题。</p>
 <p>&emsp;&emsp;PhantomJS 是一个基于 WebKit（WebKit是一个开源的浏览器引擎，Chrome，Safari就是用的这个浏览器引擎） 的服务器端 JavaScript API，用于无需浏览器的 Web 测试，页面访问自动化，屏幕捕获，网络监控。</p>
 <h3 id="安装方法-2"><a href="#安装方法-2" class="headerlink" title="安装方法"></a>安装方法</h3><p>&emsp;&emsp;由于新的selenium3.x版本不支持PlantomJS了，此处采用2.48.0版本：</p>
-<pre><code>Pip install selenium==2.48.0</code></pre>
+<pre><code>Pip install selenium==2.48.0
+</code></pre>
 <p>PlantomJS前往plantomJS官网下载exe文件放入python安装目录下的script目录即可。</p>
 <h3 id="一般使用-1"><a href="#一般使用-1" class="headerlink" title="一般使用"></a>一般使用</h3><pre><code>from selenium import webdriver
 url = &#39;http://www.zuihaodaxue.cn/ARWU2016.html&#39;
 ulist=[]
 driver = webdriver.PhantomJS()
 driver.get(url)
-data=driver.page_source</code></pre>
+data=driver.page_source
+</code></pre>
 <p>此时得到的data即为JS渲染后的网页源代码，可以再通过BeautifulSoup进行html解析后续步骤与静态网页爬取一样。</p>
 <h2 id="实例1–爬取百度搜索风云榜单数据"><a href="#实例1–爬取百度搜索风云榜单数据" class="headerlink" title="实例1–爬取百度搜索风云榜单数据"></a>实例1–爬取百度搜索风云榜单数据</h2><p>先给代码：</p>
 <pre><code>import requests
@@ -402,7 +408,8 @@ def main():
     html = getHTMLText(url) 
     fillUnivList(ulist, html)
     printUnivList(ulist, 10)
-main()</code></pre>
+main()
+</code></pre>
 <p>代码比较简单，其中涉及到四个函数：</p>
 <ul>
 <li>getHTMLText函数获取了网页地址，通过requests的get请求返回网页源码</li>
@@ -450,7 +457,8 @@ def main():
     html = getHTMLText(url) 
     fillUnivList(ulist, html)
     printUnivList(ulist, 20)
-main()</code></pre>
+main()
+</code></pre>
 <h2 id="后文"><a href="#后文" class="headerlink" title="后文"></a>后文</h2><p>这次主要是python的几个模块的简单使用，不多说。</p>
 
     </div>

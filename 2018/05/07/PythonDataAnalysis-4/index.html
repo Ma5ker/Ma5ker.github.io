@@ -336,7 +336,7 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>&emsp;&emsp;Jieba是基于统计的分词方法，jieba分词采用了动态规范查找最大概率路径，找出基于词频的最大切分组合。</p>
-<a id="more"></a>
+<span id="more"></span>
 
 <h2 id="Jieba"><a href="#Jieba" class="headerlink" title="Jieba"></a>Jieba</h2><h3 id="分词模式"><a href="#分词模式" class="headerlink" title="分词模式"></a>分词模式</h3><p>&emsp;&emsp;Jieba有三种分词模式:</p>
 <ul>
@@ -348,7 +348,8 @@
 Cut方法接受三个参数：需要分词的字串，cut_all参数控制是否采用全模式，HMM参数用来控制是否使用HMMH模型；
 Cut_for_search(self,sentence,HMM=True)
 Cut_for_search接受两个参数：字串，是否使用HMMH模型，适用于搜索引擎构建倒排索引分词粒度较细
-jieba.load_userdict(fileName)加载自定义的字典路径</code></pre>
+jieba.load_userdict(fileName)加载自定义的字典路径
+</code></pre>
 <h2 id="Word2vec"><a href="#Word2vec" class="headerlink" title="Word2vec"></a>Word2vec</h2><p>&emsp;&emsp;Word2vec词向量模型：通过神经网络机器学习算法来训练语言模型，并在训练过程中求所对应的词向量的方法。</p>
 <h2 id="实例"><a href="#实例" class="headerlink" title="实例"></a>实例</h2><h3 id="选取语料文本，用jieba进行分词"><a href="#选取语料文本，用jieba进行分词" class="headerlink" title="选取语料文本，用jieba进行分词"></a>选取语料文本，用jieba进行分词</h3><p>&emsp;&emsp;这里选取的是金庸的小说天龙八部的全文，首先进行jieba分词，采用的是精准分词:<br>    #encoding=utf-8<br>    import sys<br>    import re<br>    import codecs<br>    import os<br>    import shutil<br>    import jieba<br>    import jieba.analyse</p>
 <pre><code>#导入自定义人物词典帮助分词
@@ -374,7 +375,8 @@ while line != &quot;&quot;:
 else:
     print(&#39;End file&#39;)
     result.write(&#39;\r\n&#39;)  
-    source.close()</code></pre>
+    source.close()
+</code></pre>
 <p>这里加载了如下自定义词典，里面为小说中的一些人物名和专有词以帮助分词：</p>
 <pre><code>段誉
 大理
@@ -586,7 +588,8 @@ else:
 容子矩
 干光豪
 葛光佩
-司空玄</code></pre>
+司空玄
+</code></pre>
 <p>&emsp;&emsp;在代码中用了大量的replace进行标点符号的去除，然后进行分词后写入结果文件result.txt。</p>
 <p>&emsp;&emsp;分词结果如下图：</p>
 <p><img src="/images/python%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90/4/fenci_result.png" alt="分词结果"></p>
@@ -600,7 +603,8 @@ print(model[&#39;萧峰&#39;])
 print(model.similarity(&quot;慕容复&quot;,&quot;萧峰&quot;))
 print(model.most_similar(&quot;萧峰&quot;,topn=10))
 print(model.doesnt_match(&quot;段誉 虚竹 萧峰 大师&quot;.split()))
-model.save(&quot;tlbb.model&quot;)</code></pre>
+model.save(&quot;tlbb.model&quot;)
+</code></pre>
 <ul>
 <li>print(model[‘萧峰’])打印出来萧峰的向量矩阵； </li>
 <li>print(model.similarity(“慕容复”,”萧峰”))打印出两者的相关程度； </li>

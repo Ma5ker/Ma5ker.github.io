@@ -335,7 +335,7 @@
     <div class="post-body" itemprop="articleBody">
         <center> 关于printf格式化字符串漏洞</center>
 
-<a id="more"></a>
+<span id="more"></span>
 
 <hr>
 <h2 id="关于printf—可变参数函数的参数寻找"><a href="#关于printf—可变参数函数的参数寻找" class="headerlink" title="关于printf—可变参数函数的参数寻找"></a>关于printf—可变参数函数的参数寻找</h2><p>&emsp;&emsp;由printf函数的可变参数，很容易得出，printf是一个stdcall的函数，由调用者维护栈帧平衡，那在printf中寻找其参数原理如下：</p>
@@ -355,7 +355,8 @@
 <hr>
 <h2 id="格式化字符串漏洞原理"><a href="#格式化字符串漏洞原理" class="headerlink" title="格式化字符串漏洞原理"></a>格式化字符串漏洞原理</h2><p>&emsp;&emsp;由上述printf函数的寻参过程printf无法知道栈上是否放置了正确数量的变量，如果没有足够的变量可供操作，而指针按正常情况下递增，就会产生越界访问。如果在第一个参数，字符串缓冲区中加入大量的控制字符，便可以轻松突破其参数限制，而打印出栈上的数据，以此便可以实现栈上的任意位置读和写。</p>
 <pre><code>&quot;%x&quot;-可以十六进制打印出指针后的数值;
-&quot;%n&quot;-将前面的所有字符串写入栈的对应位置内容指向的内存</code></pre>
+&quot;%n&quot;-将前面的所有字符串写入栈的对应位置内容指向的内存
+</code></pre>
 <p><img src="/images/stack_overflow.png" alt="stack_overflow"><br>这两个控制字符便是实现任意位置读写的关键。同时，printf还有一个有意思的符号:$,可以用于控制符中直接跳过指定数量的栈区域，如<code>%&#123;n&#125;$x</code>即会打印出栈上第n个参数的内容;<code>%&#123;n&#125;$n</code>会直接跳跃到第n个栈区，将其作为地址写入对应内存。</p>
 <p>&emsp;如果字符串为<code>%4$p</code>,则会打印出0x41414141,而如果字符串为<code>%4$n</code>,则会将0x41414141当作一个地址，向其中写入已打印的字符数。而此内容位于buff中，可由我们自己构造，也就意味着，如果想向某个地址写入内容，则通过特殊构造，将buff对应位置写入目标地址,即可实现任意地址写。</p>
 <p>&emsp;对于写任意内容的话，由于%n写入的是打印的字符数，也就是说，如果字符串为<code>%1234x%4$n</code>,则会向第四个栈区对应内存位置写入1234,</p>

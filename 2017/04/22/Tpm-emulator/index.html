@@ -332,10 +332,12 @@
     
     <div class="post-body" itemprop="articleBody">
         <p>&emsp;&emsp;写在前面的话：老师布置任务安装Tpm模拟器，坑了好久，总算给装上了，写篇教程给还未安装好的老哥及健忘的自己。<br>&emsp;&emsp;环境：ubuntu 12.04 32位(vmware workstation pro 12)<br>&emsp;&emsp;PS:由于用到的好多库环境为32位，之前尝试了开启i386架构配置编译环境仍然编译出问题，故放弃了64位ubuntu转而采用32位系统。</p>
-<a id="more"></a>
+<span id="more"></span>
 <hr>
-<h4 id="一、安装cmake"><a href="#一、安装cmake" class="headerlink" title="一、安装cmake"></a>一、安装cmake</h4><pre><code>sudo apt-get install cmake</code></pre>
-<h4 id="二、安装m4-第三步要用"><a href="#二、安装m4-第三步要用" class="headerlink" title="二、安装m4(第三步要用)"></a>二、安装m4(第三步要用)</h4><pre><code>sudo apt-get install m4</code></pre>
+<h4 id="一、安装cmake"><a href="#一、安装cmake" class="headerlink" title="一、安装cmake"></a>一、安装cmake</h4><pre><code>sudo apt-get install cmake
+</code></pre>
+<h4 id="二、安装m4-第三步要用"><a href="#二、安装m4-第三步要用" class="headerlink" title="二、安装m4(第三步要用)"></a>二、安装m4(第三步要用)</h4><pre><code>sudo apt-get install m4
+</code></pre>
 <h4 id="三、安装GNU-MPlibrary"><a href="#三、安装GNU-MPlibrary" class="headerlink" title="三、安装GNU MPlibrary"></a>三、安装GNU MPlibrary</h4><p>下载源码：**<a target="_blank" rel="noopener" href="http://gmplib.org/" title="gmplib">点击进入官网</a>**（我下载的是最新版本gmp-6.1.2.tar.bz2）</p>
 <p>解压解包后进入目录gmp-6.1.2<br>安装过程如下：</p>
 <pre><code>tar -jxf gmp-6.1.2.tar.bz2
@@ -343,14 +345,16 @@ cd gmp-6.1.2
 ./configure
 make
 make check
-sudo make install</code></pre>
+sudo make install
+</code></pre>
 <h4 id="四、安装GTK"><a href="#四、安装GTK" class="headerlink" title="四、安装GTK"></a>四、安装GTK</h4><pre><code>sudo apt-get install build-essential
 sudo apt-get install gnome-core-devel
 sudo apt-get install pkg-config
 sudo apt-get install devhelp
 sudo apt-get install libglib2.0-doc libgtk2.0-doc
 sudo apt-get install glade libglade2-dev
-sudo apt-get install libgtk2.0*</code></pre>
+sudo apt-get install libgtk2.0*
+</code></pre>
 <h4 id="五、安装Tpm-emulator"><a href="#五、安装Tpm-emulator" class="headerlink" title="五、安装Tpm emulator"></a>五、安装Tpm emulator</h4><p>下载源码，两个网址任选：**<a target="_blank" rel="noopener" href="https://github.com/PeterHuewe/tpm-emulator/releases" title="Tpm emulator">github</a>** or <strong><a target="_blank" rel="noopener" href="https://sourceforge.net/projects/tpm-emulator.berlios/" title="Tpm emulator">sourceforge</a></strong></p>
 <p>这里选择的版本是tpm_emulator-0.7.4.tar.gz<br>解压后进入目录:</p>
 <pre><code>tar -xzf tpm_emulator-0.7.4.tar.gz
@@ -359,62 +363,80 @@ mkdir build
 cd build
 cmake ../
 make
-sudo make install</code></pre>
+sudo make install
+</code></pre>
 <p>安装完成</p>
 <p>初始化</p>
 <pre><code>sudo tpmd deactivated
 sudo killall tpmd
-sudo tpmd clear</code></pre>
+sudo tpmd clear
+</code></pre>
 <p>启动软TPM</p>
 <pre><code>sudo modprobe tpmd_dev
-sudo tpmd -f -d</code></pre>
+sudo tpmd -f -d
+</code></pre>
 <p>PS:第一次运行可能有以下情况：</p>
 <blockquote>
 <p>若出现Module tpmd_dev not found，则先运行命令depmod -a<br>若出现failed: address already in use,则运行命令rm /var/run/tpm/tpmd_socket:0<br>若成功，则会不断出现tpmd.c:310: Debug: waiting for connections…</p>
 </blockquote>
 <h4 id="六、TSS协议栈安装"><a href="#六、TSS协议栈安装" class="headerlink" title="六、TSS协议栈安装"></a>六、TSS协议栈安装</h4><p>下载trousers及tpm-tools：**<a target="_blank" rel="noopener" href="http://sourceforge.net/project/showfiles.php?group_id=126012" title="源码地址">点击进入下载页面</a>**</p>
 <p>实际只安装了tpm-tools-1.3.8.tar.gz和trousers-0.3.8.tar.gz两个包</p>
-<pre><code>    这两个包版本并非最新，但教程以此为范本，以防后面配置出错，故仍套用这两个版本，有时间再折腾。</code></pre>
+<pre><code>    这两个包版本并非最新，但教程以此为范本，以防后面配置出错，故仍套用这两个版本，有时间再折腾。
+</code></pre>
 <p><strong>安装trousers-0.3.8.tar.gz</strong></p>
 <p>解压解包不再详述，完成后进入文件夹<br>注意：先查看库地址</p>
-<pre><code>whereis libtddl.so</code></pre>
+<pre><code>whereis libtddl.so
+</code></pre>
 <p>此处此系统显示为：</p>
-<pre><code>libtddl: /usr/lib/libtddl.a /usr/local/lib/libtddl.so /usr/local/lib/libtddl.a</code></pre>
+<pre><code>libtddl: /usr/lib/libtddl.a /usr/local/lib/libtddl.so /usr/local/lib/libtddl.a
+</code></pre>
 <p>故后面加红色代码处为/usr/lib/lib/libtddl.so，否则根据情况更改。<br>1、编译前，首先对其中的几个文件进行修改<br>修改./src/tcsd/Makefile.am第4行</p>
-<pre><code>tcsd_LDADD=$&#123;top_builddir&#125;/src/tcs/libtcs.a$&#123;top_builddir&#125;/src/tcs/libtddl.a -lpthread @CRYPTOLIB@</code></pre>
+<pre><code>tcsd_LDADD=$&#123;top_builddir&#125;/src/tcs/libtcs.a$&#123;top_builddir&#125;/src/tcs/libtddl.a -lpthread @CRYPTOLIB@
+</code></pre>
 <p>为：</p>
 <blockquote>
 <p>tcsd_LDADD=${top_builddir}/src/tcs/libtcs.a<font color="red">/usr/local/lib/libtddl.so</font> -lpthread @CRYPTOLIB@</p>
 </blockquote>
 <p>修改./src/tcsd/Makefile.in第55， 56行：</p>
 <pre><code>tcsd_DEPENDENCIES =$&#123;top_builddir&#125;/src/tcs/libtcs.a \
-    $&#123;top_builddir&#125;/src/tcs/libtddl.so</code></pre>
+    $&#123;top_builddir&#125;/src/tcs/libtddl.so
+</code></pre>
 <p>为：</p>
 <pre><code>tcsd_DEPENDENCIES =$&#123;top_builddir&#125;/src/tcs/libtcs.a \
-    /usr/local/lib/libtddl.so</code></pre>
+    /usr/local/lib/libtddl.so
+</code></pre>
 <p>修改后进行编译安装<br>直接执行./configure而后make会由于将警告当作错误而出现一些错误信息，简单的解决办法是执行：</p>
-<pre><code>env CFLAGS=&quot;-Wno-unused-but-set-variable&quot; ./configure</code></pre>
+<pre><code>env CFLAGS=&quot;-Wno-unused-but-set-variable&quot; ./configure
+</code></pre>
 <p>接着安装的老套路：</p>
 <pre><code>make
-sudo make install</code></pre>
+sudo make install
+</code></pre>
 <p>安装完成后启动TCSD（在启动TCSD之前，必须先启动tpm-emulator（参考第五步），否则会提示找不到设备）</p>
-<pre><code>sudo tcsd -e -f</code></pre>
+<pre><code>sudo tcsd -e -f
+</code></pre>
 <p>可能会出现下面报错信息：</p>
-<pre><code>TCSD TCS ERROR: TCS GetCapability failed with result = 0x1c</code></pre>
+<pre><code>TCSD TCS ERROR: TCS GetCapability failed with result = 0x1c
+</code></pre>
 <p>这是由于上次启动TPM没有正常退出，并且这次以默认的SAVE方式启动，进而自检不通过造成的，只需执行:</p>
-<pre><code>sudo tpmd -f -d clear</code></pre>
+<pre><code>sudo tpmd -f -d clear
+</code></pre>
 <p>之后再次执行：</p>
-<pre><code>sudo tcsd -e -f</code></pre>
+<pre><code>sudo tcsd -e -f
+</code></pre>
 <p><strong>安装tpm-tools-1.3.8.tar.gz</strong></p>
 <p>解压解包后进入目录</p>
 <pre><code>./configure
 make
-sudo make install</code></pre>
+sudo make install
+</code></pre>
 <p>检测是否成功安装：进入tpm-tools-1.3.8/src/tpm_mgmt/目录下查看以下三个信息：</p>
 <pre><code>./tpm_version                 #查看版本号
-./tpm_getpubek                #查看ek公钥</code></pre>
+./tpm_getpubek                #查看ek公钥
+</code></pre>
 <p><strong>注意:</strong><br>如果./tpm_version 出现tpm_version: error while loading sharedlibraries: libtspi.so.1: cannot open shared object file: No suchfile or directory，  则执行命令：</p>
-<pre><code>sudo apt-get installlibtspi-dev</code></pre>
+<pre><code>sudo apt-get installlibtspi-dev
+</code></pre>
 <p>若出现Tspi_Context_Connect failed: 0x00003011 - layer=tsp,code=0011 (17), Communication failure，则开启tpmd和tcsd</p>
 <p>另外，<br>在tpm_emulator-0.7.4/tddl文件夹下有测试事例：</p>
 <blockquote>
@@ -424,14 +446,16 @@ sudo make install</code></pre>
 <p>因为$PATH中没有路径/usr/local/lib，因此，需要加上LD_LIBRARY_PATH=/usr/local/lib，不然会报错<br>目前并未尝试</p>
 <h4 id="七、TPMmanager安装"><a href="#七、TPMmanager安装" class="headerlink" title="七、TPMmanager安装"></a>七、TPMmanager安装</h4><p>tpmmanager可装可不装，主要是它提供QT界面可以直观查看和管理TPM。<br>需要QT支持，需要安装qt4-qmake和libqt4-dev库</p>
 <pre><code>sudo apt-get install qt4-make
-sudo apt-get install libqt4-dev</code></pre>
+sudo apt-get install libqt4-dev
+</code></pre>
 <p>源码下载地址：<a target="_blank" rel="noopener" href="https://codeload.github.com/Rohde-Schwarz-Cybersecurity/TPMManager/zip/v0.8.1" title="tpmmanager-v0.8.1">点击下载</a></p>
 <p>解压后：</p>
 <pre><code>cd tpmmanager-0.8.1
 qmake-v
 make
 sudo install bin/tpmmanager /usr/local/bin
-tpmmanager            #运行tpmmanager，注意必须先启动tpm模拟器</code></pre>
+tpmmanager            #运行tpmmanager，注意必须先启动tpm模拟器
+</code></pre>
 <p><em>至此，所有安装完成</em><br><em>具体怎么去使用，再研究。</em></p>
 
     </div>

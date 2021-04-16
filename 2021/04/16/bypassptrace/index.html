@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Gemini","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}};
+  </script>
+
+  <meta name="description" content="背景：最近投了腾讯的实习岗位，得到一个Android的CrackMe来考察逆向知识，分析后发现其关键函数位于native so库中，并且在函数开始时启动了线程进行TracerPid检测的反调试，当发现程序被调试时会直接杀死应用。虽然题目最后卡在了native 逆向与反调试绕过这里，下去后我学习了下如何绕过这个反调试。主要是两种：（1）patch so，直接修改关键值来绕过；（2）修改系统内核文件来">
+<meta property="og:type" content="article">
+<meta property="og:title" content="修改系统内核绕过TracerPid检测反调试">
+<meta property="og:url" content="http://yoursite.com/2021/04/16/bypassptrace/index.html">
+<meta property="og:site_name" content="sec4fun">
+<meta property="og:description" content="背景：最近投了腾讯的实习岗位，得到一个Android的CrackMe来考察逆向知识，分析后发现其关键函数位于native so库中，并且在函数开始时启动了线程进行TracerPid检测的反调试，当发现程序被调试时会直接杀死应用。虽然题目最后卡在了native 逆向与反调试绕过这里，下去后我学习了下如何绕过这个反调试。主要是两种：（1）patch so，直接修改关键值来绕过；（2）修改系统内核文件来">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/images/bypassptrace/fig1.png">
+<meta property="og:image" content="http://yoursite.com/images/bypassptrace/fig2.png">
+<meta property="og:image" content="http://yoursite.com/images/bypassptrace/fig3.png">
+<meta property="article:published_time" content="2021-04-16T14:39:12.000Z">
+<meta property="article:modified_time" content="2021-04-16T14:49:02.681Z">
+<meta property="article:author" content="ma5ker">
+<meta property="article:tag" content="Android">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/images/bypassptrace/fig1.png">
+
+
+<link rel="canonical" href="http://yoursite.com/2021/04/16/bypassptrace/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>修改系统内核绕过TracerPid检测反调试 | sec4fun</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">sec4fun</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-commonweal">
+
+    <a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>公益 404</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E5%8F%96boot-img"><span class="nav-number">1.</span> <span class="nav-text">提取boot.img</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E5%86%85%E6%A0%B8%E6%96%87%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text">修改内核文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#boot-img%E5%88%B7%E5%85%A5"><span class="nav-number">3.</span> <span class="nav-text">boot.img刷入</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="ma5ker"
+      src="/images/head.jpg">
+  <p class="site-author-name" itemprop="name">ma5ker</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">43</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">27</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ma5ker" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ma5ker" rel="noopener" target="_blank"><i class="github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:kcahlb@gmail.com" title="E-Mail → mailto:kcahlb@gmail.com" rel="noopener" target="_blank"><i class="envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/04/16/bypassptrace/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/head.jpg">
+      <meta itemprop="name" content="ma5ker">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="sec4fun">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          修改系统内核绕过TracerPid检测反调试
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+      
+
+      <time title="创建时间：2021-04-16 22:39:12 / 修改时间：22:49:02" itemprop="dateCreated datePublished" datetime="2021-04-16T22:39:12+08:00">2021-04-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/learn/" itemprop="url" rel="index"><span itemprop="name">learn</span></a>
+        </span>
+    </span>
+
+  
+      </div>
+      <div class="post-meta">
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>7.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>7 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>背景：最近投了腾讯的实习岗位，得到一个Android的CrackMe来考察逆向知识，分析后发现其关键函数位于native so库中，并且在函数开始时启动了线程进行TracerPid检测的反调试，当发现程序被调试时会直接杀死应用。虽然题目最后卡在了native 逆向与反调试绕过这里，下去后我学习了下如何绕过这个反调试。主要是两种：（1）patch so，直接修改关键值来绕过；（2）修改系统内核文件来将TracerPid写死为0。刚好我手头有一个之前做实验已root的小米6，便决定采用修改系统内核的方式，一劳永逸。</p>
+<span id="more"></span>
+
+<blockquote>
+<p>按照著名的“将大象放进冰箱的步骤”，我们也可以概述下我们的步骤：（1）取出内核文件；（2）修改内核文件；（3）修改后的内核刷入。参考了很多文章基本都是差不多的，但是在具体应用到我的Mi6时出现了一点问题，不过最后解决了这些小问题。</p>
+</blockquote>
+<h2 id="提取boot-img"><a href="#提取boot-img" class="headerlink" title="提取boot.img"></a>提取boot.img</h2><p>取出boot.img有很多种方式，这里列举几种：</p>
+<p><strong>adb shell</strong></p>
+<p>boot.img一般位于<code>/dev/block/platform</code>下面的文件夹种，对于我的MI6，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sagit:&#x2F; $ su</span><br><span class="line">sagit:&#x2F; # ls &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F; -l | grep boot</span><br><span class="line">lrwxrwxrwx 1 root root 16 1973-10-08 02:03 boot -&gt; &#x2F;dev&#x2F;block&#x2F;sde40</span><br></pre></td></tr></table></figure>
+
+<p>是一个链接，指向<code>/dev/block/sde40</code>，使用dd写出文件后用<code>adb pull</code>取出即可。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dd if&#x3D;&#x2F;dev&#x2F;block&#x2F;sde40 of&#x3D;&#x2F;data&#x2F;local&#x2F;boot.img</span><br><span class="line">adb pull &#x2F;data&#x2F;local&#x2F;boot.img boot.img</span><br></pre></td></tr></table></figure>
+
+<p>这里如果出现权限问题，需要修改一下<code>boot.img</code>的权限。</p>
+<p><strong>REC导出</strong></p>
+<p>这里我的MI 6 刷了第三方rec <code>twrp</code>，也可以利用其直接备份分区。</p>
+<p><strong>Flashify</strong></p>
+<p>也可以使用<code>Flashify</code>这个APP备份kernel。</p>
+<p>有一点需要注意的是，以上方式都是需要root手机的。</p>
+<h2 id="修改内核文件"><a href="#修改内核文件" class="headerlink" title="修改内核文件"></a>修改内核文件</h2><p>取出来的<code>boot.img</code>是一个打包文件，包含了<code>ramdisk</code>，<code>kernel</code>等很多东西，首先需要将其解开。这里我使用的是一个github上的工具<a target="_blank" rel="noopener" href="https://github.com/cfig/Android_boot_image_editor">Android_boot_image_editor</a>,具体使用可以参考一下其readme。、</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">➜  Android_boot_image_editor git:(master) ✗ .\gradlew unpack</span><br><span class="line">Starting a Gradle Daemon, 2 incompatible and 1 stopped Daemons could not be reused, use --status for details</span><br><span class="line"></span><br><span class="line">&gt; Task :unpack</span><br><span class="line">19:21:57:932 WARN PackableLauncher - [boot.img] will be handled by [BootImgParser]</span><br><span class="line">19:21:58:031 WARN PackableLauncher - &#39;unpack&#39; sequence initialized</span><br><span class="line">19:21:58:047 INFO BootImgParser - header version 0</span><br><span class="line">19:21:58:062 WARN BootHeaderV2 - BootImgHeader constructor</span><br><span class="line">19:21:58:320 WARN EnvironmentVerifier - &#39;xz&#39; not installed. Please install it manually to analyze DTB files</span><br><span class="line">19:21:58:428 INFO ZipHelper - decompress(gz) done: build&#x2F;unzip_boot&#x2F;ramdisk.img.gz -&gt; build&#x2F;unzip_boot&#x2F;ramdisk.img</span><br><span class="line">19:21:58:431 INFO AndroidCpio - Cleaning D:\secTools\android\Android_boot_image_editor\build\unzip_boot\root ...</span><br><span class="line">19:21:58:446 WARN AndroidCpio -   root&#x2F;.backup has improper file mode 000, fix it</span><br><span class="line">19:21:58:451 WARN AndroidCpio -   root&#x2F;.backup&#x2F;.magisk has improper file mode 000, fix it</span><br><span class="line">19:21:58:468 WARN AndroidCpio -   root&#x2F;config has improper file mode 555, fix it</span><br><span class="line">19:21:58:556 INFO AndroidCpio - cpio trailer found, mode&#x3D;000001ed</span><br><span class="line">19:21:58:556 INFO Common -  ramdisk extracted : build&#x2F;unzip_boot&#x2F;ramdisk.img -&gt; build\unzip_boot\root</span><br><span class="line">19:21:58:559 INFO BootV2 - verify type is VB1.0, skip AVB parsing</span><br><span class="line">19:21:58:596 INFO BootV2 -</span><br><span class="line">                        Unpack Summary of boot.img</span><br><span class="line">┌───────────────────────────────────────┬──────────────────────────────────────┐</span><br><span class="line">│What                                   │Where                                 │</span><br><span class="line">└───────────────────────────────────────┴──────────────────────────────────────┘</span><br><span class="line">┌───────────────────────────────────────┬──────────────────────────────────────┐</span><br><span class="line">│image info                             │build&#x2F;unzip_boot&#x2F;boot.json            │</span><br><span class="line">├───────────────────────────────────────┼──────────────────────────────────────┤</span><br><span class="line">│kernel                                 │build&#x2F;unzip_boot&#x2F;kernel               │</span><br><span class="line">├───────────────────────────────────────┼──────────────────────────────────────┤</span><br><span class="line">│ramdisk                                │build&#x2F;unzip_boot&#x2F;ramdisk.img.gz       │</span><br><span class="line">│\-- extracted ramdisk rootfs           │build&#x2F;unzip_boot&#x2F;root                 │</span><br><span class="line">└───────────────────────────────────────┴──────────────────────────────────────┘</span><br><span class="line">19:21:58:623 WARN PackableLauncher - &#39;unpack&#39; sequence completed</span><br><span class="line"></span><br><span class="line">BUILD SUCCESSFUL in 22s</span><br><span class="line">8 actionable tasks: 1 executed, 7 up-to-date</span><br></pre></td></tr></table></figure>
+
+<p>最后解包得到下面内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">➜  Android_boot_image_editor git:(master) ✗ cd .\build\unzip_boot\</span><br><span class="line">➜  unzip_boot git:(master) ✗ ls</span><br><span class="line"></span><br><span class="line">    Directory: D:\secTools\android\Android_boot_image_editor\build\unzip_boot</span><br><span class="line"></span><br><span class="line">Mode                 LastWriteTime         Length Name</span><br><span class="line">----                 -------------         ------ ----</span><br><span class="line">d----           2021&#x2F;4&#x2F;16    19:21                root</span><br><span class="line">-a---           2021&#x2F;4&#x2F;16    19:21           1135 boot.json</span><br><span class="line">-a---           2021&#x2F;4&#x2F;16    19:21       16826616 kernel</span><br><span class="line">-a---           2021&#x2F;4&#x2F;16    19:21           5966 ramdisk_filelist.txt</span><br><span class="line">-a---           2021&#x2F;4&#x2F;16    19:21        6792680 ramdisk.img</span><br><span class="line">-a---           2021&#x2F;4&#x2F;16    19:21        2693750 ramdisk.img.gz</span><br></pre></td></tr></table></figure>
+
+<p>下面开始修改文件夹中的<code>kernel</code>文件。这个kernel中也包含了很多东西，需要解开得到我们需要修改的部分。</p>
+<blockquote>
+<p>其实这里就是我看其他人写的博客有出入的地方。参考的博客都说kernel应该是一些其他文件之后附加一个压缩包，但是针对我的实际情况是gzip文件+设备文件。由于此前跟着其他人博客做，没有注意到自己情况的特殊性，绕了很多弯路。</p>
+</blockquote>
+<p>这里我建议先用binwalk看一下kernel是怎么组织的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">sec@fun:~&#x2F;test_dir$ binwalk kernel</span><br><span class="line"></span><br><span class="line">DECIMAL       HEXADECIMAL     DESCRIPTION</span><br><span class="line">--------------------------------------------------------------------------------</span><br><span class="line">0             0x0             gzip compressed data, maximum compression, from Unix, last modified: 1970-01-01 00:00:00 (null date)</span><br><span class="line">11358134      0xAD4FB6        device tree image (dtb)</span><br><span class="line">11734142      0xB30C7E        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">11770255      0xB3998F        device tree image (dtb)</span><br><span class="line">12152895      0xB9703F        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">12189492      0xB9FF34        device tree image (dtb)</span><br><span class="line">12566784      0xBFC100        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">12607122      0xC05E92        device tree image (dtb)</span><br><span class="line">12990994      0xC63A12        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">13031757      0xC6D94D        device tree image (dtb)</span><br><span class="line">13414353      0xCCAFD1        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">13450891      0xCD3E8B        device tree image (dtb)</span><br><span class="line">13838523      0xD328BB        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">13879747      0xD3C9C3        device tree image (dtb)</span><br><span class="line">14263623      0xD9A547        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">14304386      0xDA4482        device tree image (dtb)</span><br><span class="line">14678262      0xDFF8F6        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">14714908      0xE0881C        device tree image (dtb)</span><br><span class="line">15102452      0xE671F4        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">15143648      0xE712E0        device tree image (dtb)</span><br><span class="line">15526260      0xECE974        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">15562798      0xED782E        device tree image (dtb)</span><br><span class="line">15943262      0xF3465E        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">15980333      0xF3D72D        device tree image (dtb)</span><br><span class="line">16360801      0xF9A561        Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br><span class="line">16397872      0xFA3630        device tree image (dtb)</span><br><span class="line">16785420      0x100200C       Unix path: &#x2F;dev&#x2F;block&#x2F;platform&#x2F;soc&#x2F;1da4000.ufshc&#x2F;by-name&#x2F;system</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，对于我的kernel，其前面部分是一个gzip，后面是一大堆的设备文件。所以我们需要做的是提取出头部的gzip，解压修改后拼接回去。这里可以用python脚本完成，执行后得到一个kernel_core.gz，对其进行解压得到我们需要分析的kernel。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./kernel&quot;</span>,<span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">	content=f.read(<span class="number">0xAD4FB6</span>)</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./kernel_core.gz&quot;</span>,<span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(content)</span><br></pre></td></tr></table></figure>
+
+<p>说一下TracerPid检测实现反调试的原理，linux下的进程会在/proc/pid.status下面保存进程的相关信息，当基于ptrace的调试器对其进行调试时，会修改<code>TracerPid</code>值，所以其反调试一般是对此值进行检测实现的。我们绕过需要修改kernel将其固定为0。</p>
+<p>首先需要借用ida对其中的字符串进行解析，定位到<code>TracerPid</code>位置。</p>
+<p>用ida加载kernel file，处理器类型选择<code>ARM Little-endian [ARM]</code>。</p>
+<p><img src="/images/bypassptrace/fig1.png" alt="fig1"></p>
+<p>进入IDA后按<code>shift</code>+<code>f12</code>解析字符串，搜索<code>TracerPid</code>定位字符串，偏移为<code>0x155A09B</code>。</p>
+<p><img src="/images/bypassptrace/fig2.png" alt="fig2"></p>
+<p>找到字符串后需要对其进行修改，这里我用的winhex修改的，将<code>25 64</code>修改为<code>30 09</code>。</p>
+<p><img src="/images/bypassptrace/fig3.png" alt="fig3"></p>
+<p>至此，修改完内核文件，重命名为<code>kernel</code>。之后就是将内核重新压缩后和原来内核文件剩余的部分拼接起来。先将其重新<code>gzip</code>压缩。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sec@fun:~&#x2F;test_dir$ gzip .&#x2F;kernel</span><br><span class="line">sec@fun:~&#x2F;test_dir$ ls -l | grep kernel</span><br><span class="line">-rw-r--r-- 1 sec sec 11374276 Apr 16 19:30 kernel.gz</span><br></pre></td></tr></table></figure>
+
+<p>然后将这个和原来的拼起来。这里也是写个简单的python脚本处理。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./kernel.gz&quot;</span>,<span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">	content=f.read()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./kernel&quot;</span>,<span class="string">&quot;rb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.seek(<span class="number">0xAD4FB6</span>)</span><br><span class="line">    content += f.read()</span><br><span class="line"></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;./kernel_new&quot;</span>,<span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(content)</span><br></pre></td></tr></table></figure>
+
+<p>将得到的<code>kernel_new</code>放入之前解包的文件夹，并重命名为<code>kernel</code>替换掉原来的<code>kernel</code>文件。</p>
+<blockquote>
+<p>可以顺便修改一下root下面的<code>default.prop</code>文件，将其中的<code>ro.debuggable=0</code>改为<code>ro.debuggable=1</code>，这个就是控制全局调试的开关，不是当前的重点，只是顺手改一下。</p>
+</blockquote>
+<p>之后调用工具重打包，在根目录下得到<code>boot.img.signed</code>文件。</p>
+<h2 id="boot-img刷入"><a href="#boot-img刷入" class="headerlink" title="boot.img刷入"></a>boot.img刷入</h2><p>将得到的<code>boot.img.signed</code>修改为<code>boot_new.img</code>放入手机的随意一个文件夹，之后转入twrp rec: <code>安装</code>→<code>刷入镜像</code>，选择处理后的镜像刷如即可。</p>
+<p><strong>搞定，可以愉快的进行调试了。</strong></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Android/" rel="tag"># Android</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/03/06/afl/" rel="prev" title="AFL源码阅读与流程分析">
+                  <i class="fa fa-chevron-left"></i> AFL源码阅读与流程分析
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+  
+  
+  
+
+
+
+      
+    <div class="comments" id="gitalk-container"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">ma5ker</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">277k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">4:12</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.css">
+
+<script>
+NexT.utils.loadComments('#gitalk-container', () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1.6.2/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '0530768cd3819c29f055',
+      clientSecret: '9465920674abd65e54adf115c57771a78911b8f4',
+      repo        : 'blog-comments',
+      owner       : 'Ma5ker',
+      admin       : ['Ma5ker'],
+      proxy       : 'https://cors-anywhere.azm.workers.dev/https://github.com/login/oauth/access_token',
+      id          : '585829eb8852287628a0761872f50684',
+        language: 'zh-CN',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":85,"height":200,"hOffset":60,"vOffset":40},"mobile":{"show":true,"scale":0.3,"motion":true},"neat_enable":true,"neat_html":{"enable":true,"exclude":null},"neat_css":{"enable":true,"exclude":["**/*.min.css"]},"neat_js":{"enable":true,"mangle":true,"output":null,"compress":null,"exclude":["**/*.min.js","**/jquery.fancybox.pack.js","**/index.js","**/love.js"]},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
